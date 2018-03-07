@@ -1,0 +1,22 @@
+<div>
+	<form action="/add_operator" method="post">
+		<fieldset>
+		<label for="name">Name:</label>
+		{{input type="text" id="name" name="name" value=name placeholder="Enter full name" required='required'}}
+		<br/><br/>
+		<label for="age">ID:</label>
+		{{input type="number" id="id" name="id" value=id placeholder="Enter id" required='required'}}
+		<br/><br/>
+		<label for="pass">Password:</label>
+		{{input type ="password" id="pass" value=pass name = "pass" placeholder="What's the password?" required='required'}}
+		<br/><br/>
+		<label for="is_admin">Do you want to grant admin privileges :</label>
+		<select id="is_admin" name="is_admin">
+			<option value="no">No</option>
+			<option value="yes">Yes</option>
+		</select>
+		<br/><br/>
+		<input type="submit" value="Add" />
+		</fieldset>
+	</form>
+</div>

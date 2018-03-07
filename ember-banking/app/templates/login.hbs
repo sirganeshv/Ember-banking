@@ -1,0 +1,12 @@
+<h1>Operator Login</h1>
+<fieldset>
+  <label for="id">ID:</label>
+  {{input type="number" id="id" name="id" value=id placeholder="Enter id" }}
+  <br/><br/>
+  <label for="pass">Password:</label>
+  {{input type ="password" id="pass" name = "pass" value=pass placeholder="What's the password?" }}
+  <br/><br/>
+</fieldset>
+<button type="submit" {{action "login" }}>Login</button>
+<br/>
+{{message}}

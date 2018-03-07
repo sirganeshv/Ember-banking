@@ -1,0 +1,79 @@
+<!--!DOCTYPE html>
+<html-->
+<!--head-->
+	<meta charset="utf-8" />
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<title>Bank/Home</title>
+	<style>
+		.logout {
+			position  : fixed;
+			top : 0;
+			right : 10px;
+		}
+	</style>
+<!--/head-->
+<!--body-->
+<div class = "logout">
+	<a href = "/logout">logout</a>
+</div>
+<br/><br/>
+<div class="Container">
+	<div class="row">
+		<div class="col-sm-3">
+			<input type="button" onclick="location.href='/add_operator';" value="Add Operator" />
+		</div>
+		<div class="col-sm-3">
+			<input type="button" onclick="location.href='/add_customer';" value="Add customer" />
+		</div>
+		<div class="col-sm-3">
+			<input type="button" onclick="location.href='/update_customer';" value="Update Customer" />
+		</div>
+		<div class="col-sm-3">
+			<input type="button" onclick="location.href='/delete_account';" value="Delete Account" />
+		</div>
+	</div>
+	<br/>
+	<div class="row">
+		<div class="col-sm-3">
+			<input type="button" onclick="location.href='/display';" value="Display Customer" />
+		</div>
+		<div class="col-sm-3">
+			<input type="button" onclick="location.href='/display_all';" value="Display all Customers" />
+		</div>
+		<div class="col-sm-3">
+			<input type="button" onclick="location.href='/deposit';" value="Deposit" />
+		</div>
+		<div class="col-sm-3">
+			<input type="button" onclick="location.href='/withdraw';" value="Withdraw" />
+		</div>
+	</div>
+	<br/>
+	<div class="row">
+		<div class="col-sm-3">
+			<input type="button" onclick="location.href='/transfer';" value="Transfer" /><br/><br/>
+		</div>
+		<div class="col-sm-3">
+			<input type="button" onclick="location.href='/schedule_transfer';" value="Schedule transfer" />
+		</div>
+		<div class="col-sm-3">
+			<input type="button" onclick="location.href='/account_statement';" value="Account Statement" />
+		</div>
+		<div class="col-sm-3">
+			<input type="button" onclick="location.href='/account_statement_range';" value="Account Statement in range" />
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-sm-3">
+			<input type="button" onclick="location.href='/standing_instructions';" value="Standing instructions" />
+		</div>
+		<div class="col-sm-3">
+			<input type="button" onclick="location.href='/fixed_deposit';" value="Fixed Deposit" />
+		</div>
+		<div class="col-sm-6">
+			<input type="button" onclick="location.href='/forgot_password';" value="Forgot Password" />
+		</div>
+	</div>
+</div>
+<!--/body>
+</html-->
