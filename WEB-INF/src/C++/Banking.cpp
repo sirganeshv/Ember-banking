@@ -450,8 +450,7 @@ JNIEXPORT jint JNICALL Java_Banking_add_1customer(JNIEnv *env, jobject obj, jstr
 
 
 //Update account details (phone_no and address for existing customer)
-void update_account(){
-	int acc_no = get_acc_no();
+JNIEXPORT void JNICALL Java_Banking_update_1customer(JNIEnv *env, jobject obj, jint acc_no, jstring details, jstring phone, jstring address){
 	int j;
 	for(j = 0;j < customer_list.size();j++) {
 		if(customer_list[j].acc_no == acc_no) {
@@ -467,24 +466,12 @@ void update_account(){
 	int i = find_customer_position(acc_no);
 	if(i == -1)
 		return;
-	cout<<"Enter which field to update  1.Phone Number  2.Address\n";
-	int option;
-	cin>>option;
-	switch(option) {
-		case 1:
-				cout<<"Enter the new Phone number\n";
-				cin>>customer_list[i].phone_no;
-				while(strlen(customer_list[i].phone_no) !=4 || !(is_valid_no(customer_list[i].phone_no))) {
-					cout<<"Enter valid number(4 digits)\n";
-					cin>>customer_list[i].phone_no;
-				}
-				cout<<"Phone number updated successfully";
-		break;
-		case 2:
-				cout<<"Enter the new address\n";
-				cin>>customer_list[i].address;
-				cout<<"Address updated successfully";
-		break;
+	const char* option = env->GetStringUTFChars(details,0);
+	if(!strcmp("phone",option)) {
+		strcpy(customer_list[i].phone_no,env->GetStringUTFChars(phone,0));
+	}
+	else {
+		strcpy(customer_list[i].address,env->GetStringUTFChars(address,0));
 	}
 	gettimeofday(&customer_list[i].last_accessed_time);
 	//customer_list[i].frequency++;

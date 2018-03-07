@@ -47,10 +47,13 @@ public class Banking extends HttpServlet{
 	private native boolean login(int id,String password);
 	private native boolean add_operator(String name,int id,String password,String is_admin);
 	private native int add_customer(String name,int age,String phone,String address,String passphrase,String security_qn,String security_ans);
+	private native void update_customer(int acc_no,String details,String phone,String address);
+	
 	
 	private static final String LOGIN = "/login";
 	private static final String ADD_OPERATOR = "/add_operator";
 	private static final String ADD_CUSTOMER = "/add_customer";
+	private static final String UPDATE_CUSTOMER = "/update_customer";
 	
 	public void doGet(HttpServletRequest req,HttpServletResponse res)  
 	throws ServletException,IOException {
@@ -93,6 +96,12 @@ public class Banking extends HttpServlet{
 				acc_no = bank.add_customer(req.getParameter("name"),age,req.getParameter("phone"),req.getParameter("address"),
 					req.getParameter("passphrase"),req.getParameter("security_qn"),req.getParameter("security_ans"));
 				pw.println("Your account number is " + acc_no);
+			}
+			break;
+			case UPDATE_CUSTOMER: {
+				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				bank.update_customer(acc_no,req.getParameter("details"),req.getParameter("phone"),req.getParameter("address"));
+				pw.println("Updated");
 			}
 			break;
 			default:

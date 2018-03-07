@@ -11,6 +11,7 @@ Router.map(function() {
   this.route('home');
   this.route('add_operator');
   this.route('add_customer');
+  this.route('update_customer');
 });
 
 export default Router;
