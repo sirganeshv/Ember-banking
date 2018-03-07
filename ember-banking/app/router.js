@@ -10,6 +10,7 @@ Router.map(function() {
   this.route('login');
   this.route('home');
   this.route('add_operator');
+  this.route('add_customer');
 });
 
 export default Router;

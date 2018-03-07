@@ -335,14 +335,14 @@ JNIEXPORT jboolean JNICALL Java_Banking_add_1operator(JNIEnv *env, jobject obj, 
 	else
 		opratorr.is_admin = false;
 	cout<<"Everything done successfully\n";
-	current_operator_position = current_operator->id;
+	//current_operator_position = current_operator->id;
 	operators.push_back(opratorr);
 	
-	for(int i = 0;i < operators.size();i++)
+	/*for(int i = 0;i < operators.size();i++)
 		if(operators[i].id == current_operator_position) {
 			current_operator = & operators[i];
 			break;
-		}
+		}*/
 	srand(1);
 	write_files();
 	srand(1);
@@ -413,40 +413,22 @@ JNIEXPORT jboolean JNICALL Java_Banking_login(JNIEnv * env, jobject obj, jint id
 
 
 //Adds account for new customer and assigns account number
-void add_account(){
+JNIEXPORT jint JNICALL Java_Banking_add_1customer(JNIEnv *env, jobject obj, jstring name, jint age, jstring phone, jstring address,
+	jstring passphrase, jstring security_qn, jstring security_ans){
 	struct customer_details customer ;
-	cout<<"Enter the following details\n";
-	cout<<"Customer_name\t";
-	cin>>customer.customer_name;
-	while(!is_valid_name(customer.customer_name)) {
-		cout<<"Enter your name";
-		cin>>customer.customer_name;
-	}
-	cout<<"Age\t\t";
-	cin>>customer.age;
-	cout<<"Phone No\t";
-	cin>>customer.phone_no;
-	while(strlen(customer.phone_no) !=4 || !(is_valid_no(customer.phone_no))) {
-		cout<<"Enter valid number(4 digits)\n";
-		cin>>customer.phone_no;
-	}
-	cout<<"Address\t\t";
-	cin>>customer.address;
-	strcpy(customer.passphrase,get_passphrase().c_str());
-	string str;
-	cout<<"Enter your security question\n";
-	cin.ignore();
-	getline(cin,str);
-	strcpy(customer.security_question,str.c_str());
-	cout<<"Your answer : ";
-	getline(cin,str);
-	strcpy(customer.security_answer,str.c_str());
+	strcpy(customer.customer_name,env->GetStringUTFChars(name, 0));
+	customer.age = age;
+	strcpy(customer.phone_no,env->GetStringUTFChars(phone,0));
+	strcpy(customer.address,env->GetStringUTFChars(address,0));
+	strcpy(customer.passphrase,env->GetStringUTFChars(passphrase,0));
+	strcpy(customer.security_question,env->GetStringUTFChars(security_qn,0));
+	strcpy(customer.security_answer,env->GetStringUTFChars(security_ans,0));
 	customer.balance = 1000;
 	gettimeofday(&customer.last_accessed_time);
 	customer_frequency.push_back(1);
 	customer_list.push_back(customer);	
 	int acc_no = write_customer(customer);
-	cout<<"Your account number is "<<acc_no;
+	//cout<<"Your account number is "<<acc_no;
 	customer.acc_no = acc_no;
 	struct transaction initial_transaction;
 	initial_transaction.acc_no = customer.acc_no;
@@ -460,6 +442,8 @@ void add_account(){
 	write_files();
 	srand(1);
 	load_files();
+	return acc_no;
+	//return 0;
 	//load_customers();
 }
 

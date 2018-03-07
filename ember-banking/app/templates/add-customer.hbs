@@ -1,0 +1,30 @@
+<div>
+	<form action="/add_customer" method="post">
+		<fieldset>
+		<label for="name">Name:</label>
+		<input type="text" id="name" name="name" placeholder="Enter your full name" required />
+		<br/><br/>
+		<label for="age">Age:</label>
+		<input type="number" id="age" name="age" placeholder="Enter your age" min = 1 required />
+		<br/><br/>
+		<label for="phone">Phone_no:</label>
+		<input type="number" id="phone" name="phone" placeholder="Enter your phone_no" min = 1000 max = 9999 required />
+		<br/><br/>
+		<label for="address">Address:</label>
+		<textarea id="address" name="address" placeholder="What's your address?" required></textarea>
+		<br/><br/>
+		<label for="passphrase">Passphrase:</label>
+		<input type ="password" id="passphrase" name = "passphrase" placeholder="What's your passphrase?" required />
+		<br/><br/>
+		<label for="security_qn">Security Question:</label>
+		<input type ="text" id="security_qn" name="security_qn" placeholder="What's your question?" required />
+		<br/><br/>
+		<label for="security_ans">Security Answer:</label>
+		<input type ="text" id="security_ans" name="security_ans" placeholder="What's your answer?"required />
+		<br/><br/>
+
+		<br/><br/>
+		<input type="submit" value="Add" />
+		</fieldset>
+	</form>
+</div>

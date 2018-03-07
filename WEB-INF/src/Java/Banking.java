@@ -46,9 +46,11 @@ public class Banking extends HttpServlet{
 	
 	private native boolean login(int id,String password);
 	private native boolean add_operator(String name,int id,String password,String is_admin);
+	private native int add_customer(String name,int age,String phone,String address,String passphrase,String security_qn,String security_ans);
 	
 	private static final String LOGIN = "/login";
 	private static final String ADD_OPERATOR = "/add_operator";
+	private static final String ADD_CUSTOMER = "/add_customer";
 	
 	public void doGet(HttpServletRequest req,HttpServletResponse res)  
 	throws ServletException,IOException {
@@ -79,9 +81,18 @@ public class Banking extends HttpServlet{
 				int id = Integer.parseInt(req.getParameter("id"));
 				String password = req.getParameter("pass");
 				getServletContext().log("The method is getting executed "+id + "   "+password);
-				boolean status = bank.add_operator(req.getParameter("name"),id,password,req.getParameter("is_admin"));
+				boolean status = false;
+				status = bank.add_operator(req.getParameter("name"),id,password,req.getParameter("is_admin"));
 				getServletContext().log("Status is "+status);
 				pw.println("Added");
+			}
+			break;
+			case ADD_CUSTOMER: {
+				int age = Integer.parseInt(req.getParameter("age"));
+				int acc_no;
+				acc_no = bank.add_customer(req.getParameter("name"),age,req.getParameter("phone"),req.getParameter("address"),
+					req.getParameter("passphrase"),req.getParameter("security_qn"),req.getParameter("security_ans"));
+				pw.println("Your account number is " + acc_no);
 			}
 			break;
 			default:
