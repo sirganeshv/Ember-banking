@@ -1318,13 +1318,14 @@ void fixed_deposit() {
 	deposit.maturity_time = maturity_time;
 	deposits.push_back(deposit);	
 	cout<<"Maturity at "<<deposit.maturity_time.tm_hour<<" : "<<deposit.maturity_time.tm_min<<" : "<<deposit.maturity_time.tm_sec<<"\n";
-	if(is_timestamp_less_than(deposit.maturity_time,next_fd_time) || deposits.size() == 1 || 
+	/*if(is_timestamp_less_than(deposit.maturity_time,next_fd_time) || deposits.size() == 1 || 
 		(is_timestamp_equal(deposit.maturity_time,next_fd_time) && (deposit.maturity_time.tm_sec < next_fd_time.tm_sec))) {
 		next_fd_timer.Stop();
 		next_fd_time = deposit.maturity_time;
 		next_fd_timer = CTimer(clear_fd, (mktime(&maturity_time) - mktime(&current_time))*1000);
 		next_fd_timer.Start();
-	}
+		cout<<"Timer started\n";
+	}*/
 	srand(1);
 	write_files();
 	update_customer(customer_list[i]);
@@ -1616,8 +1617,338 @@ JNIEXPORT void JNICALL Java_Banking_transfer_1money(JNIEnv *env, jobject obj, ji
 	}
 	else 
 		cout<<"You do not have sufficient balance";
+}
+
+JNIEXPORT void JNICALL Java_Banking_schedule_1transfer(JNIEnv *env, jobject obj, jint withdraw_acc_no, jint money, jint acc_no,
+	jstring customer_passphrase, jstring operator_password, jint hour, jint min) {
 	
+	int k;
+	for(k = 0;k < customer_list.size();k++) {
+		if(customer_list[k].acc_no == withdraw_acc_no) {
+			customer_list.push_back(customer_list[k]);
+			customer_list.erase(customer_list.begin() +  k );
+			customer_frequency.push_back(customer_frequency[k]);
+			customer_frequency.erase(customer_frequency.begin() + k);
+			break;
+		}
+	}
+	if(k == customer_list.size())
+		read_customer(withdraw_acc_no);
+	int i = find_customer_position(withdraw_acc_no);
+	if(i == -1) 
+		return;
+	int amount = money;
+	if(customer_list[i].balance - amount > 0) {
+		for(k = 0;k < customer_list.size();k++) {
+			if(customer_list[k].acc_no == acc_no) {
+				customer_list.push_back(customer_list[k]);
+				customer_list.erase(customer_list.begin() +  k );
+				customer_frequency.push_back(customer_frequency[k]);
+				customer_frequency.erase(customer_frequency.begin() + k);
+				break;
+			}
+		}
+		if(k == customer_list.size())
+			read_customer(acc_no);
+		int i = find_customer_position(withdraw_acc_no);
+		int j = find_customer_position(acc_no);
+		if(j == -1) {
+			return;
+		}
+		if(customer_list[i].wrong_attempts >= 3) {
+			cout<<"Locked\nDeposit to unlock\n";
+			return;
+		}
+		if(i == j) {
+			cout<<"You cannot transfer your money to yourself\n";
+			return;
+		}
+		/*v8::String::Utf8Value param1(args[3]->ToString());
+		std::string customer_passphrase = std::string(*param1);
+		if(!is_passphrase_valid(customer_passphrase,i)) {
+			/*cout<<"Do you want to use the forget password option ?\n0->No(default)   1->Yes\t";
+			int choice;
+			cin>>choice;
+			int is_changed;
+			if(choice == 1) {
+				is_changed = forgot_password(i);
+				if(!is_changed)
+					return;
+			}
+			else {
+				customer_list[i].wrong_attempts++;
+				update_customer(customer_list[i]);
+				return;
+		}
+		v8::String::Utf8Value param2(args[4]->ToString());
+		std::string operator_password = std::string(*param2);
+		if(!is_operator_password_correct(operator_password)) {
+			return;
+		}*/
+		/*while(true) {
+			//cout<<"Enter time (hh mm)\t";
+			//get_time(&hour,&min);
+			
+			if(hour >= get_timestamp().tm_hour) {
+				if(hour == get_timestamp().tm_hour && min <= get_timestamp().tm_min) {
+					cout<<"Enter future time\n";
+					continue;
+				}
+				break;
+			}
+		}*/
+		gettimeofday(&customer_list[i].last_accessed_time);
+		//customer_list[i].frequency++;
+		customer_frequency[i]++;
+		tm time = get_timestamp();
+		time.tm_min = min;
+		time.tm_hour = hour;
+		time.tm_sec = 0;
+		struct transaction withdraw_transaction;
+		withdraw_transaction.timestamp = time;
+		withdraw_transaction.acc_no = withdraw_acc_no;
+		strcpy(withdraw_transaction.withdraw,(to_string(amount)).c_str());
+		withdraw_transaction.is_completed = true;
+		pending_transactions.push_back(withdraw_transaction);
+		struct transaction deposit_transaction;
+		deposit_transaction.timestamp = time;
+		deposit_transaction.acc_no = acc_no;
+		strcpy(deposit_transaction.deposit,(to_string(amount)).c_str());
+		deposit_transaction.is_completed = true;
+		pending_transactions.push_back(deposit_transaction);
+		//cout<<"Less or not "<<is_timestamp_less_than(time,next_time)<<"\n";
+		cout<<"Before time is "<<next_time.tm_hour<<" : "<<next_time.tm_min<<" and "<<time.tm_hour<<" : "<<time.tm_min<<"\n";
+		if(pending_transactions.size() == 2  || is_timestamp_less_than(time,next_time)) {
+			next_time = time;
+			//cout<<"NExt time is "<<next_time.tm_hour<<" : "<<next_time.tm_min;
+			//cout<< put_time(&next_time,"%X") << '\n';
+			struct tm current = get_timestamp();
+			timer.Stop();
+			timer = CTimer(listener, (mktime(&time) - mktime(&current))*1000);
+			timer.Start();
+		}
+	}
+	else {
+		cout<<"You do not have sufficient balance";
+	}
+	srand(1);
+	write_files();
+	srand(1);
+	load_files();
+		
+}
+
+JNIEXPORT void JNICALL Java_Banking_add_1standing_1transactions(JNIEnv *env, jobject obj, jint withdraw_acc_no, jint money, jint acc_no, 
+	jstring customer_passphrase, jstring operator_password, jint hour, jint min, jint period) {
 	
+	int k;
+	for(k = 0;k < customer_list.size();k++) {
+		if(customer_list[k].acc_no == withdraw_acc_no) {
+			customer_list.push_back(customer_list[k]);
+			customer_list.erase(customer_list.begin() +  k );
+			customer_frequency.push_back(customer_frequency[k]);
+			customer_frequency.erase(customer_frequency.begin() + k);
+			break;
+		}
+	}
+	if(k == customer_list.size())
+		read_customer(withdraw_acc_no);
+	int i = find_customer_position(withdraw_acc_no);
+	if(i == -1) 
+		return;
+	int amount = money;
+	if(customer_list[i].balance - amount > 0) {
+		for(k = 0;k < customer_list.size();k++) {
+			if(customer_list[k].acc_no == acc_no) {
+				customer_list.push_back(customer_list[k]);
+				customer_list.erase(customer_list.begin() +  k );
+				customer_frequency.push_back(customer_frequency[k]);
+				customer_frequency.erase(customer_frequency.begin() + k);
+				break;
+			}
+		}
+		if(k == customer_list.size())
+			read_customer(acc_no);
+		i = find_customer_position(withdraw_acc_no);
+		int j = find_customer_position(acc_no);
+		if(j == -1) {
+			return;
+		}
+		if(customer_list[i].wrong_attempts >= 3) {
+			cout<<"Locked\nDeposit to unlock\n";
+			return;
+		}
+		if(i == j) {
+			cout<<"You cannot transfer your money to yourself\n";
+			return;
+		}
+		/*v8::String::Utf8Value param1(args[3]->ToString());
+		std::string customer_passphrase = std::string(*param1);
+		if(!is_passphrase_valid(customer_passphrase,i)) {
+			/*cout<<"Do you want to use the forget password option ?\n0->No(default)   1->Yes\t";
+			int choice;
+			cin>>choice;
+			int is_changed;
+			if(choice == 1) {
+				is_changed = forgot_password(i);
+				if(!is_changed)
+					return;
+			}
+			else {
+				customer_list[i].wrong_attempts++;
+				update_customer(customer_list[i]);
+				return;
+			//}
+		}
+		v8::String::Utf8Value param2(args[4]->ToString());
+		std::string operator_password = std::string(*param2);
+		if(!is_operator_password_correct(operator_password)) {
+			return;
+		}
+		int hour,min;
+		//while(true) {
+			hour = args[5]->Int32Value();
+			min = args[6]->Int32Value();
+			if(hour >= get_timestamp().tm_hour) {
+				if(hour == get_timestamp().tm_hour && min <= get_timestamp().tm_min) {
+					cout<<"Enter future time\n";
+					return;
+				}
+			}
+		//}*/
+		tm time = get_timestamp();
+		time.tm_min = min;
+		time.tm_hour = hour;
+		time.tm_sec = 0;
+		struct transaction withdraw_transaction;
+		withdraw_transaction.timestamp = time;
+		withdraw_transaction.acc_no = withdraw_acc_no;
+		strcpy(withdraw_transaction.withdraw,(to_string(amount)).c_str());
+		withdraw_transaction.is_completed = false;
+		withdraw_transaction.period = period;
+		pending_transactions.push_back(withdraw_transaction);
+		struct transaction deposit_transaction;
+		deposit_transaction.timestamp = time;
+		deposit_transaction.acc_no = acc_no;
+		strcpy(deposit_transaction.deposit,(to_string(amount)).c_str());
+		deposit_transaction.is_completed = false;
+		deposit_transaction.period = period;
+		pending_transactions.push_back(deposit_transaction);
+		//cout<<"Before time is "<<next_time.tm_hour<<" : "<<next_time.tm_min;
+
+		if(pending_transactions.size() == 2 || is_timestamp_less_than(time,next_time)) {
+			next_time = time;
+			timer.Stop();	
+			//cout<<"After time is "<<next_time.tm_hour<<" : "<<next_time.tm_min;
+			struct tm current = get_timestamp();
+			timer = CTimer(listener, (mktime(&time) - mktime(&current))*1000);
+			timer.Start();
+		}
+	}
+	else {
+		cout<<"You do not have sufficient balance";
+	}
+	srand(1);
+	write_files();
+	srand(1);
+	load_files();
+		
+}
+
+JNIEXPORT jstring JNICALL Java_Banking_fixed_1deposit(JNIEnv *env, jobject obj, jint acc_no, jint money, jint duration) {
+	int j;
+	struct customer_details customer;
+	struct fixed_deposit deposit;
+	for(j = 0;j < customer_list.size();j++) {
+		if(customer_list[j].acc_no == acc_no) {
+			customer_list.push_back(customer_list[j]);
+			customer_list.erase(customer_list.begin()+j);
+			customer_frequency.push_back(customer_frequency[j]);
+			customer_frequency.erase(customer_frequency.begin() + j);
+			break;
+		}
+	}
+	if(j == customer_list.size())
+		read_customer(acc_no);
+	int i = find_customer_position(acc_no);
+	if(i == -1)
+		return NULL;
+	deposit.principal = money;
+	if(customer_list[i].balance >= deposit.principal) {
+		customer_list[i].balance -= deposit.principal;
+	}
+	deposit.duration = duration;
+	if(customer_list[i].age<=60)
+		deposit.rate_of_interest = INTEREST_NORMAL;
+	else
+		deposit.rate_of_interest = INTEREST_SENIOR;
+	deposit.acc_no = acc_no;
+	deposit.amount = deposit.principal + (deposit.principal*deposit.duration*deposit.rate_of_interest)/100;
+	//cout<<"Your interest will be "<<deposit.amount - deposit.principal<<"  and your maturity amount will be "<<deposit.amount<<"\n";
+	tm current_time = get_timestamp();
+	deposit.start_time = current_time;
+	struct transaction withdraw_transaction;
+	withdraw_transaction.timestamp = deposit.start_time;
+	withdraw_transaction.acc_no = acc_no;
+	strcpy(withdraw_transaction.withdraw,(to_string(deposit.principal)).c_str());
+	withdraw_transaction.is_completed = true;
+	//cout<<"Your balance is "<<customer_list[i].balance<<"\n";
+	withdraw_transaction.balance = customer_list[i].balance;
+	transactions.push_back(withdraw_transaction);
+	tm maturity_time = add_minutes_to_timestamp(current_time,deposit.duration);
+	deposit.maturity_time = maturity_time;
+	deposits.push_back(deposit);	
+	//cout<<"Maturity at "<<deposit.maturity_time.tm_hour<<" : "<<deposit.maturity_time.tm_min<<" : "<<deposit.maturity_time.tm_sec<<"\n";
+	if(is_timestamp_less_than(deposit.maturity_time,next_fd_time) || deposits.size() == 1 || 
+		(is_timestamp_equal(deposit.maturity_time,next_fd_time) && (deposit.maturity_time.tm_sec < next_fd_time.tm_sec))) {
+		next_fd_timer.Stop();
+		next_fd_time = deposit.maturity_time;
+		next_fd_timer = CTimer(clear_fd, (mktime(&maturity_time) - mktime(&current_time))*1000);
+		next_fd_timer.Start();
+	}
+	srand(1);
+	write_files();
+	update_customer(customer_list[i]);
+	srand(1);
+	load_files();
+	char str[100];
+	sprintf(str,"Your interest will be %d and your maturity amount will be %d and will mature at %d : %d : %d",deposit.amount - deposit.principal,deposit.amount,deposit.maturity_time.tm_hour,deposit.maturity_time.tm_min,deposit.maturity_time.tm_sec);
+	jstring maturity = env->NewStringUTF(str);
+	return maturity;
+}
+
+JNIEXPORT jstring JNICALL Java_Banking_get_1security_1question(JNIEnv *env, jobject obj, jint acc_no) {
+	int j;
+	for(j = 0;j < customer_list.size();j++) {
+		if(customer_list[j].acc_no == acc_no) {
+			customer_list.push_back(customer_list[j]);
+			customer_list.erase(customer_list.begin()+j);
+			customer_frequency.push_back(customer_frequency[j]);
+			customer_frequency.erase(customer_frequency.begin() + j);
+			break;
+		}
+	}
+	if(j == customer_list.size())
+		read_customer(acc_no);
+		int i = find_customer_position(acc_no);
+		if(i == -1)
+			return NULL;
+	return env->NewStringUTF(customer_list[i].security_question);
+}
+
+JNIEXPORT jboolean JNICALL Java_Banking_forgot_1password(JNIEnv *env, jobject obj, jint acc_no, jstring answer) {
+	int i = find_customer_position(acc_no);
+	if(!strcmp(env->GetStringUTFChars(answer,0),customer_list[i].security_answer)) 
+		return true;
+	else
+		return false;
+}
+
+JNIEXPORT void JNICALL Java_Banking_change_1password(JNIEnv *env, jobject obj, jint acc_no, jstring passphrase) {
+	int i = find_customer_position(acc_no);
+	strcpy(customer_list[i].passphrase,env->GetStringUTFChars(passphrase,0));
+	customer_list[i].wrong_attempts = 0;
+	update_customer(customer_list[i]);
 }
 
 /*int main() {

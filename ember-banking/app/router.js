@@ -16,6 +16,11 @@ Router.map(function() {
   this.route('deposit');
   this.route('withdraw');
   this.route('transfer');
+  this.route('schedule_transfer');
+  this.route('standing_instructions');
+  this.route('fixed_deposit');
+  this.route('forgot_password');
+  this.route('account_statement');
 });
 
 export default Router;

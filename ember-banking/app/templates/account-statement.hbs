@@ -1,0 +1,35 @@
+<style>
+table, td {
+    border: 1px solid black;
+}
+</style>
+<script src="http://code.jquery.com/jquery-1.6.2.min.js"></script>
+<script type="text/javascript">
+	$(document).ready(function() {
+		$('#employee').hide();
+	});
+</script>
+<div>
+	<form>
+		<fieldset>
+			<label for="acc_no">Account Number:</label>
+			<input type="number" id="acc_no" name="acc_no" placeholder="Enter your Account number" required/>
+			<br/><br/>
+			<button type="submit" {{action "display" }}>Display</button>
+		</fieldset>
+		<div id="employee">
+			<table id="emptable">
+				<thead>
+					<th>Account Number</th>
+					<th>Deposit</th>
+					<th>Withdraw</th>
+					<th>Balance</th>
+					<th>Time</th>
+				</thead>
+				<tbody id = "tablebody">
+					<!-- <tr></tr> -->
+				</tbody>
+			</table>
+		</div>
+	</form>
+</div>

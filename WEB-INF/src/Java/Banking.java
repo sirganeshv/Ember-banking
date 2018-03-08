@@ -32,16 +32,16 @@ public class Banking extends HttpServlet{
 	//private native void transfer_money();
 	private native void print_account_statement();
 	private native void print_account_summary_in_range();
-	private native void schedule_transfer();
+	//private native void schedule_transfer();
 	private native void write_files();
 	private native void print_pending_transactions();
 	private native void push_back(int acc_no);
 	private native void display_current_cache();
 	private native int get_cache_size();
 	private native void clear_cache();
-	private native void add_standing_transactions();
-	private native void fixed_deposit();
-	private native void forgot_password(int acc_no);
+	//private native void add_standing_transactions();
+	//private native void fixed_deposit();
+	
 	
 	private native boolean is_valid_account(int acc_no);
 	private native boolean is_customer_under_current_operator(int acc_no);
@@ -55,9 +55,17 @@ public class Banking extends HttpServlet{
 	private native void deposit(int acc_no,int money);
 	private native boolean withdraw(int acc_no,int money,String customer_passphrase,String operator_password);
 	private native void transfer_money(int acc_no,int money,String phone);
+	private native void schedule_transfer(int withdraw_acc_no,int money,int acc_no,String customer_passphrase,String operator_password,int hour,int min);
+	private native void add_standing_transactions(int withdraw_acc_no,int money,int acc_no,String customer_passphrase,String operator_password,int hour,int min,int period);
+	private native String fixed_deposit(int acc_no,int money,int duration);
+	private native String get_security_question(int acc_no);
+	private native boolean forgot_password(int acc_no,String answer);
+	private native void change_password(int acc_no,String passphrase);
+
 	private native boolean is_passphrase_valid(int acc_no,String customer_passphrase);
 	private native boolean is_max_transactions_reached(int acc_no);
 	private native boolean is_phone_no_valid(String phone_no);
+	
 	
 	
 	private static final String LOGIN = "/login";
@@ -68,6 +76,13 @@ public class Banking extends HttpServlet{
 	private static final String DEPOSIT = "/deposit";
 	private static final String WITHDRAW = "/withdraw";
 	private static final String TRANSFER = "/transfer";
+	private static final String SCHEDULE_TRANSFER = "/schedule_transfer";
+	private static final String STANDING_INSTRUCTIONS = "/standing_instructions";
+	private static final String FIXED_DEPOSIT = "/fixed_deposit";
+	private static final String FORGOT_PASSWORD = "/forgot_password";
+	private static final String SECURITY = "/security";
+	private static final String CHANGE_PASSWORD = "/change_password";
+	private static final String ACCOUNT_STATEMENT = "/account_statement";
 	
 	public void doGet(HttpServletRequest req,HttpServletResponse res)  
 	throws ServletException,IOException {
@@ -87,7 +102,7 @@ public class Banking extends HttpServlet{
 		PrintWriter pw=res.getWriter();
 		switch (path) {
 			case LOGIN: {
-				//getServletContext().log("Id of the operator is "+req.getParameter("id"));
+				//getServletContext().log("Id of the operator is "+req.getParameter("ID"));
 				int id = Integer.parseInt(req.getParameter("ID"));
 				String password = req.getParameter("password");
 				boolean status = bank.login(id,password);
@@ -95,13 +110,10 @@ public class Banking extends HttpServlet{
 			}
 			break;
 			case ADD_OPERATOR: {
-				getServletContext().log("Id of the operator is "+req.getParameter("id"));
 				int id = Integer.parseInt(req.getParameter("id"));
 				String password = req.getParameter("pass");
-				getServletContext().log("The method is getting executed "+id + "   "+password);
 				boolean status = false;
 				status = bank.add_operator(req.getParameter("name"),id,password,req.getParameter("is_admin"));
-				getServletContext().log("Status is "+status);
 				pw.println("Added");
 			}
 			break;
@@ -186,8 +198,117 @@ public class Banking extends HttpServlet{
 					bank.transfer_money(acc_no,money,phone);
 					pw.println("Transferred");
 				}
-				
-
+			}
+			break;
+			case SCHEDULE_TRANSFER : {
+				int withdraw_acc_no = Integer.parseInt(req.getParameter("withdraw_acc_no"));
+				int money = Integer.parseInt(req.getParameter("money"));
+				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				String customer_passphrase = req.getParameter("customer_passphrase");
+				String operator_password = req.getParameter("operator_password");
+				int hour = Integer.parseInt(req.getParameter("hour"));
+				int min = Integer.parseInt(req.getParameter("min"));
+				boolean is_valid = bank.is_valid_account(withdraw_acc_no);
+				if(!is_valid) 
+					pw.println("Account number is not valid");
+				else if(!bank.is_valid_account(acc_no)) 
+					pw.println("Receiver account number not valid");
+				else if (withdraw_acc_no == acc_no) 
+					pw.println("You cannot transfer money to yourself");
+				else if(money <= 0)
+					pw.println("Enter valid amount");
+				else if(hour < 0 || hour >= 24 || min < 0 || min >= 60) 
+					pw.println("Enter valid time");
+				else if(!bank.is_passphrase_valid(withdraw_acc_no,customer_passphrase))
+					pw.println("Invalid passphrase");
+				else if(!bank.is_customer_under_current_operator(withdraw_acc_no)) 
+					pw.println("The customer is under some other operator");
+				else if(!bank.is_operator_password_correct(operator_password))	
+					pw.println("Operator password wrong");
+				else {
+					bank.schedule_transfer(withdraw_acc_no,money,acc_no,customer_passphrase,operator_password,hour,min);
+					pw.println("Scheduled for transfer");
+				}
+			}
+			break;
+			case ACCOUNT_STATEMENT : {
+				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				getServletContext().log("Received "+acc_no);
+				pw.println("Received "+acc_no);
+			}
+			break;
+			case STANDING_INSTRUCTIONS : {
+				int withdraw_acc_no = Integer.parseInt(req.getParameter("withdraw_acc_no"));
+				int money = Integer.parseInt(req.getParameter("money"));
+				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				String customer_passphrase = req.getParameter("customer_passphrase");
+				String operator_password = req.getParameter("operator_password");
+				int hour = Integer.parseInt(req.getParameter("hour"));
+				int min = Integer.parseInt(req.getParameter("min"));
+				int period = Integer.parseInt(req.getParameter("period"));
+				boolean is_valid = bank.is_valid_account(withdraw_acc_no);
+				if(!is_valid) 
+					pw.println("Account number is not valid");
+				else if(!bank.is_valid_account(acc_no)) 
+					pw.println("Receiver account number not valid");
+				else if (withdraw_acc_no == acc_no) 
+					pw.println("You cannot transfer money to yourself");
+				else if(money <= 0)
+					pw.println("Enter valid amount");
+				else if(period <= 0)
+					pw.println("Enter valid period(in minutes)");
+				else if(hour < 0 || hour >= 24 || min < 0 || min >= 60) 
+					pw.println("Enter valid time");
+				else if(!bank.is_passphrase_valid(withdraw_acc_no,customer_passphrase))
+					pw.println("Invalid passphrase");
+				else if(!bank.is_customer_under_current_operator(withdraw_acc_no)) 
+					pw.println("The customer is under some other operator");
+				else if(!bank.is_operator_password_correct(operator_password))	
+					pw.println("Operator password wrong");
+				else {
+					bank.add_standing_transactions(withdraw_acc_no,money,acc_no,customer_passphrase,operator_password,hour,min,period);
+					pw.println("Added periodical transfer for every "+period+" minutes");
+				}
+			}
+			break;
+			case FIXED_DEPOSIT : {
+				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				int money = Integer.parseInt(req.getParameter("money"));
+				int duration = Integer.parseInt(req.getParameter("duration"));
+				boolean is_valid = bank.is_valid_account(acc_no);
+				if(!is_valid) 
+					pw.println("Account number is not valid");
+				else if(money <= 0)
+					pw.println("Enter valid amount");
+				else if(duration <= 0)
+					pw.println("Enter valid duration");
+				else {
+					String maturity = bank.fixed_deposit(acc_no,money,duration);
+					pw.println(maturity);
+				}
+			}
+			break;
+			case FORGOT_PASSWORD : {
+				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				boolean is_valid = bank.is_valid_account(acc_no);
+				if(!is_valid) 
+					pw.println("Account number is not valid");
+				else {
+					pw.println(bank.get_security_question(acc_no));
+				}
+			}	
+			break;
+			case SECURITY : {
+				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				String answer = req.getParameter("answer");
+				pw.println(bank.forgot_password(acc_no,answer));
+			}
+			break;
+			case CHANGE_PASSWORD : {
+				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				String passphrase = req.getParameter("passphrase");
+				bank.change_password(acc_no,passphrase);
+				pw.println("Successfully changed passphrase");
 			}
 			break;
 			default:
