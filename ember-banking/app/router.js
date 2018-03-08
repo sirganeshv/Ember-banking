@@ -12,6 +12,10 @@ Router.map(function() {
   this.route('add_operator');
   this.route('add_customer');
   this.route('update_customer');
+  this.route('delete_account');
+  this.route('deposit');
+  this.route('withdraw');
+  this.route('transfer');
 });
 
 export default Router;

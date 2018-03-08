@@ -18,19 +18,18 @@ public class Banking extends HttpServlet{
 	private native Customer get_customer_from_list(int position);
 	private native void read_customer(int acc_no);
 	private native int find_customer_position(int acc_no);
-	private native boolean is_customer_under_current_operator(int position);
+	//private native boolean is_customer_under_current_operator(int position);
 	private native boolean is_current_operator_admin();
 	private native void initialize();
 	private native void add_account();
 	private native void update_account();
-	private native void delete_account();
 	private native void display_customer(int position);
 	private native void display_customer_list();
-	private native boolean deposit(int position,int deposit_value);
+	//private native boolean deposit(int position,int deposit_value);
 	private native void record_deposit(int acc_no,int deposit_value);
 	private native boolean withdraw_money(int position,int withdraw_value);
 	private native void record_withdrawal(int acc_no,int withdraw_value);
-	private native void transfer_money();
+	//private native void transfer_money();
 	private native void print_account_statement();
 	private native void print_account_summary_in_range();
 	private native void schedule_transfer();
@@ -44,16 +43,31 @@ public class Banking extends HttpServlet{
 	private native void fixed_deposit();
 	private native void forgot_password(int acc_no);
 	
+	private native boolean is_valid_account(int acc_no);
+	private native boolean is_customer_under_current_operator(int acc_no);
+	private native boolean is_operator_password_correct(String password);
+	
 	private native boolean login(int id,String password);
 	private native boolean add_operator(String name,int id,String password,String is_admin);
 	private native int add_customer(String name,int age,String phone,String address,String passphrase,String security_qn,String security_ans);
 	private native void update_customer(int acc_no,String details,String phone,String address);
+	private native void delete_account(int acc_no,String password);
+	private native void deposit(int acc_no,int money);
+	private native boolean withdraw(int acc_no,int money,String customer_passphrase,String operator_password);
+	private native void transfer_money(int acc_no,int money,String phone);
+	private native boolean is_passphrase_valid(int acc_no,String customer_passphrase);
+	private native boolean is_max_transactions_reached(int acc_no);
+	private native boolean is_phone_no_valid(String phone_no);
 	
 	
 	private static final String LOGIN = "/login";
 	private static final String ADD_OPERATOR = "/add_operator";
 	private static final String ADD_CUSTOMER = "/add_customer";
 	private static final String UPDATE_CUSTOMER = "/update_customer";
+	private static final String DELETE_ACCOUNT = "/delete_account";
+	private static final String DEPOSIT = "/deposit";
+	private static final String WITHDRAW = "/withdraw";
+	private static final String TRANSFER = "/transfer";
 	
 	public void doGet(HttpServletRequest req,HttpServletResponse res)  
 	throws ServletException,IOException {
@@ -81,6 +95,7 @@ public class Banking extends HttpServlet{
 			}
 			break;
 			case ADD_OPERATOR: {
+				getServletContext().log("Id of the operator is "+req.getParameter("id"));
 				int id = Integer.parseInt(req.getParameter("id"));
 				String password = req.getParameter("pass");
 				getServletContext().log("The method is getting executed "+id + "   "+password);
@@ -104,6 +119,77 @@ public class Banking extends HttpServlet{
 				pw.println("Updated");
 			}
 			break;
+			case DELETE_ACCOUNT : {
+				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				String password = req.getParameter("operator_password");
+				boolean is_valid = bank.is_valid_account(acc_no);
+				if(!is_valid)
+					pw.println("Account number is not valid");
+				else if(!bank.is_operator_password_correct(password))
+					pw.println("Operator password wrong");
+				else {
+					bank.delete_account(acc_no,password);
+					pw.println("Account deleted successfully");
+				}
+			}
+			break;
+			case DEPOSIT : {
+				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				int money = Integer.parseInt(req.getParameter("money"));
+				boolean is_valid = bank.is_valid_account(acc_no);
+				if(!is_valid) 
+					pw.println("Account number is not valid");
+				else if(money <= 0)
+					pw.println("Enter valid amount");
+				else {
+					bank.deposit(acc_no,money);
+					pw.println("Successfully deposited");
+				}
+			}
+			break;
+			case WITHDRAW : {
+				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				int money = Integer.parseInt(req.getParameter("money"));
+				String customer_passphrase = req.getParameter("customer_passphrase");
+				String operator_password = req.getParameter("operator_password");
+				boolean is_valid = bank.is_valid_account(acc_no);
+				if(!is_valid) 
+					pw.println("Account number is not valid");
+				else if(money <= 0)
+					pw.println("Enter valid amount");
+				else if(!bank.is_passphrase_valid(acc_no,customer_passphrase))
+					pw.println("Invalid passphrase");
+				else if(!bank.is_operator_password_correct(operator_password))	
+					pw.println("Operator password wrong");
+				else if(bank.is_max_transactions_reached(acc_no)) 
+					pw.println("Maximum transactions reached");
+				else if(bank.withdraw(acc_no,money,customer_passphrase,operator_password))
+					pw.println("Successfully withdrawn");
+				else
+					pw.println("Withdraw failed");
+			}
+			break;
+			case TRANSFER : {
+				int acc_no = Integer.parseInt(req.getParameter("withdraw_acc_no"));
+				int money = Integer.parseInt(req.getParameter("money"));
+				String phone = req.getParameter("phone_no");
+				boolean is_valid = bank.is_valid_account(acc_no);
+				if(!is_valid) 
+					pw.println("Account number is not valid");
+				else if(money <= 0)
+					pw.println("Enter valid amount");
+				else if(bank.is_max_transactions_reached(acc_no)) 
+					pw.println("Maximum transactions reached");
+				else if(!bank.is_phone_no_valid(phone)) 
+					pw.println("Enter a valid phone number");
+				else {
+					bank.transfer_money(acc_no,money,phone);
+					pw.println("Transferred");
+				}
+				
+
+			}
+			break;
 			default:
 			break;
 		}
@@ -115,7 +201,7 @@ public class Banking extends HttpServlet{
 		System.load("C:\\xampp\\tomcat\\webapps\\bank\\banking.dll");
 	}
 	
-	public static void main(String[] args) {
+	/*public static void main(String[] args) {
 		Banking bank = new Banking();
 		bank.initialize();
 		/*while(true) {
@@ -293,6 +379,6 @@ public class Banking extends HttpServlet{
 				default:
 					System.out.println("Enter the correct option");
 			}	
-		}*/
-	}
+		}
+	}*/
 }

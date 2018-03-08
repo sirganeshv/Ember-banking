@@ -485,9 +485,8 @@ JNIEXPORT void JNICALL Java_Banking_update_1customer(JNIEnv *env, jobject obj, j
 
 
 //Delete account of a user based on account number
-void delete_account() {
+JNIEXPORT void JNICALL Java_Banking_delete_1account(JNIEnv *, jobject, jint acc_no, jstring password){
 	//int curr_customer;
-	int acc_no = get_acc_no();
 	int operator_id = find_operator(acc_no);
 	int k;
 	for(k = 0;k < customer_list.size();k++) {
@@ -505,13 +504,12 @@ void delete_account() {
 	if(i == -1) 
 		return;
 	if(!is_customer_under_current_operator(i) && !current_operator->is_admin ) {
-		cout<<"The customer is under a different operator";
 		return;
 	}
 	customer_details customer = customer_list[i];
 	customer.is_active = false;
 	customer_list.erase(customer_list.begin()+i);	
-	cout<<"Account deleted successfully";
+	//cout<<"Account deleted successfully";
 	int operator_position = find_operator_position(operator_id);
 	bank_operator* op = & operators[operator_position];
 	int j;
@@ -623,28 +621,29 @@ bool deposit_money(int i,int deposit_value) {
 
 //Withdraw money if sufficient balance and valid passphrase exists
 bool withdraw_money(int i,int withdraw_value) {
-	if(!is_customer_under_current_operator(i) && !current_operator->is_admin ) {
+	/*if(!is_customer_under_current_operator(i) && !current_operator->is_admin ) {
 		cout<<"The customer is under a different operator";
 		return false;
 	}
 	if(customer_list[i].balance < 0) {
 		cout<<"You do not have sufficient balance";
 		return false;
-	}
+	}*/
 	int k = find_customer_info_position(customer_list[i].acc_no);
-	if(customer_infos[k].no_of_transactions == MAX_NO_OF_TRANSACTIONS) {
+	/*if(customer_infos[k].no_of_transactions == MAX_NO_OF_TRANSACTIONS) {
 		cout<<"Max number of transactions reached";
 		return false;
-	}
-	if(customer_infos[k].amount_withdrawn == MAX_WITHDRAW) {
+	}*/
+	//cout<<"No of transactions done = "<<customer_infos[k].no_of_transactions<<"\n";
+	/*if(customer_infos[k].amount_withdrawn == MAX_WITHDRAW) {
 		cout<<"Already 3000 taken this minute";
 		return false;
 	}
 	if(customer_infos[k].amount_withdrawn + withdraw_value > MAX_WITHDRAW) {
 		cout<<"Can withdraw only upto " << MAX_WITHDRAW - customer_infos[k].amount_withdrawn;
 		return false;
-	}
-	if(!is_passphrase_valid(get_passphrase(),i)) {
+	}*/
+	/*if(!is_passphrase_valid(get_passphrase(),i)) {
 		cout<<"Do you want to use the forget password option ?\n0->No(default)   1->Yes\t";
 		int choice;
 		cin>>choice;
@@ -661,7 +660,7 @@ bool withdraw_money(int i,int withdraw_value) {
 		}
 	}
 	if(!is_operator_password_correct(get_operator_password()))
-		return false;
+		return false;*/
 	customer_list[i].balance -= withdraw_value;
 	gettimeofday(&customer_list[i].last_accessed_time);
 	//customer_list[i].frequency++;
@@ -1351,7 +1350,275 @@ bool forgot_password(int i) {
 	return true;
 }
 
+JNIEXPORT jboolean JNICALL Java_Banking_is_1valid_1account(JNIEnv *, jobject, jint acc_no) {
+	bool is_present;
+	int j;
+	for(j = 0;j < customer_list.size();j++) {
+		if(customer_list[j].acc_no == acc_no) {
+			customer_list.push_back(customer_list[j]);
+			customer_list.erase(customer_list.begin()+j);
+			customer_frequency.push_back(customer_frequency[j]);
+			customer_frequency.erase(customer_frequency.begin() + j);
+			is_present = true;
+			break;
+		}
+	}
+	if(j == customer_list.size())
+		is_present = read_customer(acc_no);
+	if(!is_present) 
+		return false;
+	else
+		return true;
+}
 
+
+JNIEXPORT jboolean JNICALL Java_Banking_is_1customer_1under_1current_1operator(JNIEnv *, jobject, jint acc_no) {
+	int j;
+	for(j = 0;j < customer_list.size();j++) {
+		if(customer_list[j].acc_no == acc_no) {
+			customer_list.push_back(customer_list[j]);
+			customer_list.erase(customer_list.begin()+j);
+			customer_frequency.push_back(customer_frequency[j]);
+			customer_frequency.erase(customer_frequency.begin() + j);
+			break;
+		}
+	}
+	if(j == customer_list.size())
+		read_customer(acc_no);
+	int i = find_customer_position(acc_no);
+	bool status = false;
+	for(int j = 0;j < current_operator->no_of_customers;j++) {
+		if(current_operator->customer_acc_no_list[j] == customer_list[i].acc_no) {
+			status = true;
+			break;
+		}
+	}
+	if(!current_operator->is_admin && !status) {
+		return false;
+	}
+	return true;
+}
+
+JNIEXPORT jboolean JNICALL Java_Banking_is_1passphrase_1valid(JNIEnv *env, jobject obj, jint acc_no, jstring customer_passphrase) {
+	int j;
+	for(j = 0;j < customer_list.size();j++) {
+		if(customer_list[j].acc_no == acc_no) {
+			customer_list.push_back(customer_list[j]);
+			customer_list.erase(customer_list.begin()+j);
+			customer_frequency.push_back(customer_frequency[j]);
+			customer_frequency.erase(customer_frequency.begin() + j);
+			break;
+		}
+	}
+	if(j == customer_list.size())
+		read_customer(acc_no);
+	int i = find_customer_position(acc_no);
+	if(strcmp(env->GetStringUTFChars(customer_passphrase,0),customer_list[i].passphrase)) {
+		cout<<"You have entered a wrong passphrase\n";
+		customer_list[i].wrong_attempts++;
+		return false;
+	}
+	customer_list[i].wrong_attempts = 0;
+	return true;
+	
+}
+
+JNIEXPORT jboolean JNICALL Java_Banking_is_1operator_1password_1correct(JNIEnv *env, jobject obj, jstring password) {
+	if(strcmp(env->GetStringUTFChars(password,0),current_operator->password)) {
+		return false;
+	}
+	return true;
+}
+
+JNIEXPORT jboolean JNICALL Java_Banking_is_1max_1transactions_1reached(JNIEnv *env, jobject obj, jint acc_no) {
+	int j = find_customer_info_position(acc_no);
+	if(customer_infos[j].no_of_transactions == 2) {
+		return true;
+	}
+	return false;  
+}
+
+JNIEXPORT jboolean JNICALL Java_Banking_is_1phone_1no_1valid(JNIEnv *env, jobject obj, jstring phone) {
+	char phone_no[11];
+	strcpy(phone_no,env->GetStringUTFChars(phone,0));
+	vector<customer_details> customers = get_accounts_by_phone_no(phone_no);
+	if(customers.empty()) {
+		return false;
+	}
+	return true;
+}
+
+
+JNIEXPORT void JNICALL Java_Banking_deposit(JNIEnv *env, jobject obj, jint acc_no, jint money) {
+	int j;
+	customer_details customer;
+	for(j = 0;j < get_cache_size();j++) {
+		customer = customer_list[j];
+		if(customer.acc_no == acc_no) {
+			int i = find_customer_position(acc_no);
+			customer_list.push_back(customer_list[i]);
+			customer_list.erase(customer_list.begin() + i);
+			customer_frequency.push_back(customer_frequency[i]);
+			customer_frequency.erase(customer_frequency.begin() + i);
+			break;
+		}
+	}
+	if(j == get_cache_size())
+		bool success = read_customer(acc_no);
+	int i = find_customer_position(acc_no);
+	if(i == -1)
+		return;
+	int deposit_value = money;
+	bool is_successful = deposit_money(i,deposit_value);
+	if(is_successful)
+		record_deposit(acc_no,deposit_value);
+	write_files();
+	load_files();
+	
+}
+
+JNIEXPORT jboolean JNICALL Java_Banking_withdraw(JNIEnv *env, jobject obj, jint acc_no, jint money, jstring customer_passphrase, jstring operator_password) {
+	int j;
+	customer_details customer;
+	for(j = 0;j < get_cache_size();j++) {
+		customer = customer_list[j];
+		if(customer.acc_no == acc_no) {
+			int i = find_customer_position(acc_no);
+			customer_list.push_back(customer_list[i]);
+			customer_list.erase(customer_list.begin() + i);
+			customer_frequency.push_back(customer_frequency[i]);
+			customer_frequency.erase(customer_frequency.begin() + i);
+			break;
+		}
+	}
+	if(j == get_cache_size())
+		bool success = read_customer(acc_no);
+	int i = find_customer_position(acc_no);
+	if(i == -1)
+		return false;
+	customer = customer_list[i];
+	if(customer.wrong_attempts >= 3) {
+		cout<<"Locked\nDeposit to unlock\n";
+		return false;
+	}
+	int withdraw_value = money;	
+	bool is_successful = withdraw_money(i,withdraw_value);
+	if(is_successful) {
+		record_withdrawal(acc_no,withdraw_value);
+	}
+	write_files();
+	load_files();
+	if(is_successful)
+		return true;
+	else
+		return false;
+}
+
+
+JNIEXPORT void JNICALL Java_Banking_transfer_1money(JNIEnv *env, jobject obj, jint withdraw_acc_no, jint money, jstring phone) {
+	int k;
+	for(k = 0;k < customer_list.size();k++) {
+		if(customer_list[k].acc_no == withdraw_acc_no) {
+			customer_list.push_back(customer_list[k]);
+			customer_list.erase(customer_list.begin() +  k );
+			customer_frequency.push_back(customer_frequency[k]);
+			customer_frequency.erase(customer_frequency.begin() + k);
+			break;
+		}
+	}
+	if(k == customer_list.size())
+		read_customer(withdraw_acc_no);
+	int i = find_customer_position(withdraw_acc_no);
+	if(i == -1) 
+		return;
+	int x = find_customer_info_position(withdraw_acc_no);
+	if(customer_infos[x].no_of_transactions == MAX_NO_OF_TRANSACTIONS) {
+		cout<<"Max number of transactions reached";
+		return;
+	}
+	int amount = money;
+	/*cout<<amount<<"\n";
+	while(amount <= 0) {
+		cout<<"Enter valid amount\n";
+		cin>>amount;
+	}*/
+	int acc_no;
+	char phone_no[11];
+	if(customer_list[i].balance - amount > 0) {
+		/*cout<<"Enter mobile number of the receiver\t";
+		cin>>phone_no;
+		while(strlen(phone_no) !=4 || !(is_valid_no(phone_no))) {
+			cout<<"Enter valid number(4 digits)\n";
+			cin>>phone_no;
+		}*/
+		strcpy(phone_no,env->GetStringUTFChars(phone,0));
+		vector<customer_details> customers = get_accounts_by_phone_no(phone_no);
+		if(customers.empty()) {
+			cout<<"Phone number doesn't exist";
+			return;
+		}
+		timevall last_accessed_time = customers[0].last_accessed_time;
+		acc_no = customers[0].acc_no;
+		timevall time;
+		for(int l = 0;l < customers.size();l++) {
+			time = customers[l].last_accessed_time;
+			if(((last_accessed_time.tv_sec - time.tv_sec)*1000 + (last_accessed_time.tv_usec - time.tv_usec)/1000.0f) < 0 ) {
+				last_accessed_time = customers[l].last_accessed_time;
+				acc_no = customers[l].acc_no;
+			}
+		}
+		cout<<"The account number is "<<acc_no<<"\n";
+		for(k = 0;k < customer_list.size();k++) {
+			if(customer_list[k].acc_no == acc_no) {
+				customer_list.push_back(customer_list[k]);
+				customer_list.erase(customer_list.begin() +  k );
+				customer_frequency.push_back(customer_frequency[k]);
+				customer_frequency.erase(customer_frequency.begin() + k);
+				break;
+			}
+		}
+		if(k == customer_list.size())
+			read_customer(acc_no);
+		int i = find_customer_position(withdraw_acc_no);
+		int j = find_customer_position(acc_no);
+		if(j == -1) {
+			return;
+		}
+		if(customer_list[i].wrong_attempts >= 3) {
+			cout<<"Locked\nDeposit to unlock\n";
+			return;
+		}
+		if(i == j || !strcmp(customer_list[i].phone_no,customer_list[j].phone_no)) {
+			cout<<"You cannot transfer your money to yourself\n";
+			return;
+		}
+		if(!withdraw_money(i,amount))
+			return;
+		gettimeofday(&customer_list[i].last_accessed_time);
+		customer_frequency[i]++;
+		deposit_money(j,amount);
+		struct transaction deposit_transaction;
+		deposit_transaction.timestamp = get_timestamp();
+		deposit_transaction.acc_no = acc_no;
+		strcpy(deposit_transaction.deposit,(to_string(amount)).c_str());
+		deposit_transaction.balance = customer_list[j].balance;
+		transactions.push_back(deposit_transaction);
+		struct transaction withdraw_transaction;
+		withdraw_transaction.timestamp = get_timestamp();
+		withdraw_transaction.acc_no = withdraw_acc_no;
+		strcpy(withdraw_transaction.withdraw,(to_string(amount)).c_str());
+		withdraw_transaction.balance = customer_list[i].balance;
+		transactions.push_back(withdraw_transaction);
+		write_files();
+		update_customer(customer_list[i]);
+		update_customer(customer_list[j]);
+		load_files();
+	}
+	else 
+		cout<<"You do not have sufficient balance";
+	
+	
+}
 
 /*int main() {
 		init_db();
