@@ -17,8 +17,8 @@ export default Controller.extend({
         that.set('name',data.name);
         that.set('age',data.age);*/
         var data  = resp;
-        if(data.trim() == 'false')
-          that.set('message',"Enter your credentials correctly");
+			if(data.trim() == 'false')
+			  that.set('message',"Enter your credentials correctly");
         else if(data.trim() == 'true'){
           that.transitionToRoute('/home');
         }

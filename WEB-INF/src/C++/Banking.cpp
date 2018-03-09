@@ -1951,6 +1951,237 @@ JNIEXPORT void JNICALL Java_Banking_change_1password(JNIEnv *env, jobject obj, j
 	update_customer(customer_list[i]);
 }
 
+
+JNIEXPORT jobjectArray JNICALL Java_Banking_print_1account_1statement(JNIEnv * env, jobject jobj, jint acc_no) {
+	int k;
+	for(k = 0;k < customer_list.size();k++) {
+		if(customer_list[k].acc_no == acc_no) {
+			customer_list.push_back(customer_list[k]);
+			customer_list.erase(customer_list.begin() +  k );
+			customer_frequency.push_back(customer_frequency[k]);
+			customer_frequency.erase(customer_frequency.begin() + k);
+			break;
+		}
+	}
+	if(k == customer_list.size())
+		read_customer(acc_no);
+	if(find_customer_position(acc_no) == -1) {
+		return NULL;
+	}
+	int count = 0;
+	for(int i = 0;i < transactions.size();i++) {
+		if(transactions[i].acc_no != acc_no)
+			continue;
+		count++;
+	}
+	jclass Transaction = env -> FindClass("Transaction");
+	jobjectArray jtransactions = env->NewObjectArray( count, Transaction, NULL);
+	int j = 0;
+	for(int i = 0;i < transactions.size();i++) {
+		if(transactions[i].acc_no != acc_no)
+			continue;
+		jmethodID midInit = env -> GetMethodID(Transaction, "<init>", "()V");
+		jobject transaction = env -> NewObject(Transaction,midInit);
+		jfieldID fidAcc_no = env -> GetFieldID(Transaction, "acc_no", "I");
+		env -> SetIntField(transaction, fidAcc_no,transactions[i].acc_no);
+		jfieldID fidDeposit = env -> GetFieldID(Transaction, "deposit", "Ljava/lang/String;");
+		jstring deposit = env -> NewStringUTF(transactions[i].deposit);
+		env -> SetObjectField(transaction, fidDeposit, deposit);
+		jfieldID fidWithdraw = env -> GetFieldID(Transaction, "withdraw", "Ljava/lang/String;");
+		jstring withdraw = env -> NewStringUTF(transactions[i].withdraw);
+		env -> SetObjectField(transaction, fidWithdraw, withdraw);
+		jfieldID fidBalance = env -> GetFieldID(Transaction, "balance", "I");
+		env -> SetIntField(transaction, fidBalance,transactions[i].balance);
+		jfieldID fidTime = env -> GetFieldID(Transaction, "time", "Ljava/lang/String;");
+		jstring time = env -> NewStringUTF(get_timestamp_string(transactions[i].timestamp).c_str());
+		env -> SetObjectField(transaction, fidTime, time);
+		env->SetObjectArrayElement( jtransactions, j, transaction);
+		j++;
+	}
+	return jtransactions;
+}
+
+JNIEXPORT jobjectArray JNICALL Java_Banking_print_1account_1statement_1range(JNIEnv *env, jobject obj, jint acc_no, jint start_hour, jint start_min, jint stop_hour, jint stop_min) {
+	int k;
+	for(k = 0;k < customer_list.size();k++) {
+		if(customer_list[k].acc_no == acc_no) {
+			customer_list.push_back(customer_list[k]);
+			customer_list.erase(customer_list.begin() +  k );
+			customer_frequency.push_back(customer_frequency[k]);
+			customer_frequency.erase(customer_frequency.begin() + k);
+			break;
+		}
+	}
+	if(k == customer_list.size())
+		read_customer(acc_no);
+	if(find_customer_position(acc_no) == -1) {
+		return NULL;
+	}
+	int count = 0;
+	for(int i = 0;i < transactions.size();i++) {
+		if(transactions[i].acc_no != acc_no)
+			continue;
+		if(!is_timestamp_in_range(start_hour,start_min,stop_hour,stop_min,transactions[i].timestamp))
+			continue;
+		count++;
+	}
+	jclass Transaction = env -> FindClass("Transaction");
+	jobjectArray jtransactions = env->NewObjectArray( count, Transaction, NULL);
+	int j = 0;
+	bool valid_time;
+	for(int i = 0;i < transactions.size();i++) {
+		if(transactions[i].acc_no != acc_no)
+			continue;
+		valid_time = false;
+		if(!is_timestamp_in_range(start_hour,start_min,stop_hour,stop_min,transactions[i].timestamp))
+			continue;
+		jmethodID midInit = env -> GetMethodID(Transaction, "<init>", "()V");
+		jobject transaction = env -> NewObject(Transaction,midInit);
+		jfieldID fidAcc_no = env -> GetFieldID(Transaction, "acc_no", "I");
+		env -> SetIntField(transaction, fidAcc_no,transactions[i].acc_no);
+		jfieldID fidDeposit = env -> GetFieldID(Transaction, "deposit", "Ljava/lang/String;");
+		jstring deposit = env -> NewStringUTF(transactions[i].deposit);
+		env -> SetObjectField(transaction, fidDeposit, deposit);
+		jfieldID fidWithdraw = env -> GetFieldID(Transaction, "withdraw", "Ljava/lang/String;");
+		jstring withdraw = env -> NewStringUTF(transactions[i].withdraw);
+		env -> SetObjectField(transaction, fidWithdraw, withdraw);
+		jfieldID fidBalance = env -> GetFieldID(Transaction, "balance", "I");
+		env -> SetIntField(transaction, fidBalance,transactions[i].balance);
+		jfieldID fidTime = env -> GetFieldID(Transaction, "time", "Ljava/lang/String;");
+		jstring time = env -> NewStringUTF(get_timestamp_string(transactions[i].timestamp).c_str());
+		env -> SetObjectField(transaction, fidTime, time);
+		env->SetObjectArrayElement( jtransactions, j, transaction);
+		j++;
+	}
+	return jtransactions;
+	
+}
+
+JNIEXPORT jobject JNICALL Java_Banking_display(JNIEnv *env, jobject obj, jint acc_no) {
+	int k;
+	for(k = 0;k < customer_list.size();k++) {
+		if(customer_list[k].acc_no == acc_no) {
+			customer_list.push_back(customer_list[k]);
+			customer_list.erase(customer_list.begin() +  k );
+			customer_frequency.push_back(customer_frequency[k]);
+			customer_frequency.erase(customer_frequency.begin() + k);
+			break;
+		}
+	}
+	if(k == customer_list.size())
+		read_customer(acc_no);
+	int i = find_customer_position(acc_no);
+	if(i == -1) 
+		return NULL;
+	jclass Customer = env -> FindClass("Customer");
+	jmethodID midInit = env -> GetMethodID(Customer, "<init>", "()V");
+	jobject customer = env -> NewObject(Customer,midInit);
+	jfieldID fidAcc_no = env -> GetFieldID(Customer, "acc_no", "I");
+	env -> SetIntField(customer, fidAcc_no,customer_list[i].acc_no);
+	jfieldID fidAge = env -> GetFieldID(Customer, "age", "I");
+	env -> SetIntField(customer, fidAge,customer_list[i].age);
+	jfieldID fidBalance = env -> GetFieldID(Customer, "balance", "I");
+	env -> SetIntField(customer, fidBalance,customer_list[i].balance);
+	/*jfieldID fidWrong_attempts = env -> GetFieldID(Customer, "wrong_attempts", "I");
+	env -> SetIntField(customer, fidWrong_attempts,customer_list[i].wrong_attempts);
+	jfieldID fidIs_active = env -> GetFieldID(Customer, "is_active", "Z");
+	env -> SetIntField(customer, fidIs_active,customer_list[i].is_active);*/
+	jfieldID fidCustomer_name = env -> GetFieldID(Customer, "customer_name", "Ljava/lang/String;");
+	jstring name = env -> NewStringUTF(customer_list[i].customer_name);
+	env -> SetObjectField(customer, fidCustomer_name, name);
+	jfieldID fidAddress = env -> GetFieldID(Customer, "address", "Ljava/lang/String;");
+	jstring address = env -> NewStringUTF(customer_list[i].address);
+	env -> SetObjectField(customer, fidAddress, address);
+	jfieldID fidPhone = env -> GetFieldID(Customer, "phone_no", "Ljava/lang/String;");
+	jstring phone_no = env -> NewStringUTF(customer_list[i].phone_no);
+	env -> SetObjectField(customer, fidPhone, phone_no);
+	jfieldID fidPassphrase = env -> GetFieldID(Customer, "passphrase", "Ljava/lang/String;");
+	jstring passphrase = env -> NewStringUTF(customer_list[i].passphrase);
+	env -> SetObjectField(customer, fidPassphrase, passphrase);
+	return customer;
+	
+}
+
+
+JNIEXPORT jobjectArray JNICALL Java_Banking_display_1all(JNIEnv *env, jobject obj) {
+	jclass Customer = env -> FindClass("Customer");
+	jobjectArray jcustomers ;
+	if(current_operator->is_admin) {
+		cout<<"Is admin "<<current_operator->is_admin<<"\n";
+		load_customers();
+		int j = 0;
+		jcustomers = env->NewObjectArray( customer_list.size(), Customer, NULL);
+		for (unsigned i=0; i<customer_list.size(); ++i) {
+			if (is_customer_under_current_operator(i) || current_operator->is_admin) {
+				jmethodID midInit = env -> GetMethodID(Customer, "<init>", "()V");
+				jobject customer = env -> NewObject(Customer,midInit);
+				jfieldID fidAcc_no = env -> GetFieldID(Customer, "acc_no", "I");
+				env -> SetIntField(customer, fidAcc_no,customer_list[i].acc_no);
+				jfieldID fidAge = env -> GetFieldID(Customer, "age", "I");
+				env -> SetIntField(customer, fidAge,customer_list[i].age);
+				jfieldID fidBalance = env -> GetFieldID(Customer, "balance", "I");
+				env -> SetIntField(customer, fidBalance,customer_list[i].balance);
+				jfieldID fidCustomer_name = env -> GetFieldID(Customer, "customer_name", "Ljava/lang/String;");
+				jstring name = env -> NewStringUTF(customer_list[i].customer_name);
+				env -> SetObjectField(customer, fidCustomer_name, name);
+				jfieldID fidAddress = env -> GetFieldID(Customer, "address", "Ljava/lang/String;");
+				jstring address = env -> NewStringUTF(customer_list[i].address);
+				env -> SetObjectField(customer, fidAddress, address);
+				jfieldID fidPhone = env -> GetFieldID(Customer, "phone_no", "Ljava/lang/String;");
+				jstring phone_no = env -> NewStringUTF(customer_list[i].phone_no);
+				env -> SetObjectField(customer, fidPhone, phone_no);
+				jfieldID fidPassphrase = env -> GetFieldID(Customer, "passphrase", "Ljava/lang/String;");
+				jstring passphrase = env -> NewStringUTF(customer_list[i].passphrase);
+				env -> SetObjectField(customer, fidPassphrase, passphrase);
+				env->SetObjectArrayElement( jcustomers, j, customer);
+				j++;
+			}
+		}
+	}
+	else {
+		jcustomers = env->NewObjectArray( current_operator->no_of_customers, Customer, NULL);
+		for(int i = 0;i<current_operator->no_of_customers;i++) {
+			int k;
+			int l = 0;
+			for(k = 0;k < customer_list.size();k++) {
+				if(customer_list[k].acc_no == current_operator->customer_acc_no_list[i]) {
+					customer_list.push_back(customer_list[k]);
+					customer_list.erase(customer_list.begin() +  k );
+					customer_frequency.push_back(customer_frequency[k]);
+					customer_frequency.erase(customer_frequency.begin() + k);
+					break;
+				}
+			}
+			if(k == customer_list.size())
+				read_customer(current_operator->customer_acc_no_list[i]);
+			int j= find_customer_position(current_operator->customer_acc_no_list[i]);
+			jmethodID midInit = env -> GetMethodID(Customer, "<init>", "()V");
+			jobject customer = env -> NewObject(Customer,midInit);
+			jfieldID fidAcc_no = env -> GetFieldID(Customer, "acc_no", "I");
+			env -> SetIntField(customer, fidAcc_no,customer_list[i].acc_no);
+			jfieldID fidAge = env -> GetFieldID(Customer, "age", "I");
+			env -> SetIntField(customer, fidAge,customer_list[i].age);
+			jfieldID fidBalance = env -> GetFieldID(Customer, "balance", "I");
+			env -> SetIntField(customer, fidBalance,customer_list[i].balance);
+			jfieldID fidCustomer_name = env -> GetFieldID(Customer, "customer_name", "Ljava/lang/String;");
+			jstring name = env -> NewStringUTF(customer_list[i].customer_name);
+			env -> SetObjectField(customer, fidCustomer_name, name);
+			jfieldID fidAddress = env -> GetFieldID(Customer, "address", "Ljava/lang/String;");
+			jstring address = env -> NewStringUTF(customer_list[i].address);
+			env -> SetObjectField(customer, fidAddress, address);
+			jfieldID fidPhone = env -> GetFieldID(Customer, "phone_no", "Ljava/lang/String;");
+			jstring phone_no = env -> NewStringUTF(customer_list[i].phone_no);
+			env -> SetObjectField(customer, fidPhone, phone_no);
+			jfieldID fidPassphrase = env -> GetFieldID(Customer, "passphrase", "Ljava/lang/String;");
+			jstring passphrase = env -> NewStringUTF(customer_list[i].passphrase);
+			env -> SetObjectField(customer, fidPassphrase, passphrase);
+			env->SetObjectArrayElement( jcustomers, l, customer);
+			l++;
+		}
+	}
+	customer_list.clear();
+	return jcustomers;
+}
 /*int main() {
 		init_db();
 		initialize();

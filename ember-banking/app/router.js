@@ -21,6 +21,9 @@ Router.map(function() {
   this.route('fixed_deposit');
   this.route('forgot_password');
   this.route('account_statement');
+  this.route('account_statement_range');
+  this.route('display');
+  this.route('display_all');
 });
 
 export default Router;

@@ -30,7 +30,7 @@ public class Banking extends HttpServlet{
 	private native boolean withdraw_money(int position,int withdraw_value);
 	private native void record_withdrawal(int acc_no,int withdraw_value);
 	//private native void transfer_money();
-	private native void print_account_statement();
+	//private native void print_account_statement();
 	private native void print_account_summary_in_range();
 	//private native void schedule_transfer();
 	private native void write_files();
@@ -52,10 +52,14 @@ public class Banking extends HttpServlet{
 	private native int add_customer(String name,int age,String phone,String address,String passphrase,String security_qn,String security_ans);
 	private native void update_customer(int acc_no,String details,String phone,String address);
 	private native void delete_account(int acc_no,String password);
+	private native Customer display(int acc_no);
+	private native Customer[] display_all();
 	private native void deposit(int acc_no,int money);
 	private native boolean withdraw(int acc_no,int money,String customer_passphrase,String operator_password);
 	private native void transfer_money(int acc_no,int money,String phone);
 	private native void schedule_transfer(int withdraw_acc_no,int money,int acc_no,String customer_passphrase,String operator_password,int hour,int min);
+	private native Transaction[] print_account_statement(int acc_no);
+	private native Transaction[] print_account_statement_range(int acc_no,int start_hour,int start_min,int stop_hour,int stop_min);
 	private native void add_standing_transactions(int withdraw_acc_no,int money,int acc_no,String customer_passphrase,String operator_password,int hour,int min,int period);
 	private native String fixed_deposit(int acc_no,int money,int duration);
 	private native String get_security_question(int acc_no);
@@ -73,6 +77,8 @@ public class Banking extends HttpServlet{
 	private static final String ADD_CUSTOMER = "/add_customer";
 	private static final String UPDATE_CUSTOMER = "/update_customer";
 	private static final String DELETE_ACCOUNT = "/delete_account";
+	private static final String DISPLAY = "/display";
+	private static final String DISPLAY_ALL = "/display_all";
 	private static final String DEPOSIT = "/deposit";
 	private static final String WITHDRAW = "/withdraw";
 	private static final String TRANSFER = "/transfer";
@@ -83,6 +89,7 @@ public class Banking extends HttpServlet{
 	private static final String SECURITY = "/security";
 	private static final String CHANGE_PASSWORD = "/change_password";
 	private static final String ACCOUNT_STATEMENT = "/account_statement";
+	private static final String ACCOUNT_STATEMENT_RANGE = "/account_statement_range";
 	
 	public void doGet(HttpServletRequest req,HttpServletResponse res)  
 	throws ServletException,IOException {
@@ -143,6 +150,43 @@ public class Banking extends HttpServlet{
 					bank.delete_account(acc_no,password);
 					pw.println("Account deleted successfully");
 				}
+			}
+			break;
+			case DISPLAY : {
+				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				boolean is_valid = bank.is_valid_account(acc_no);
+				if(!is_valid) 
+					pw.println("Account number is not valid");
+				else { 
+					Customer customer = bank.display(acc_no);
+					//JSONArray obj = new JSONArray();
+					JSONArray jcustomer = new JSONArray();
+					jcustomer.add(customer.customer_name);
+					jcustomer.add(customer.acc_no);
+					jcustomer.add(customer.age);
+					jcustomer.add(customer.phone_no);
+					jcustomer.add(customer.address);
+					jcustomer.add(customer.balance);
+					pw.println(jcustomer);
+				}
+			}
+			break;
+			case DISPLAY_ALL : {
+				getServletContext().log("display all inside");
+				Customer[] customers = bank.display_all();
+				JSONArray obj = new JSONArray();
+				getServletContext().log("display all "+customers.length+" customers");
+				for(int i = 0;i < customers.length;i++) {
+					JSONArray customer = new JSONArray();
+					customer.add(customers[i].customer_name);
+					customer.add(customers[i].acc_no);
+					customer.add(customers[i].age);
+					customer.add(customers[i].phone_no);
+					customer.add(customers[i].address);
+					customer.add(customers[i].balance);
+					obj.add(customer);
+				}
+				pw.println(obj);
 			}
 			break;
 			case DEPOSIT : {
@@ -233,8 +277,52 @@ public class Banking extends HttpServlet{
 			break;
 			case ACCOUNT_STATEMENT : {
 				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
-				getServletContext().log("Received "+acc_no);
-				pw.println("Received "+acc_no);
+				boolean is_valid = bank.is_valid_account(acc_no);
+				if(!is_valid) 
+					pw.println("Account number is not valid");
+				else {
+					Transaction[] transactions = bank.print_account_statement(acc_no);
+					JSONArray obj = new JSONArray();
+					for(int i = 0;i < transactions.length;i++) {
+						JSONArray transaction = new JSONArray();
+						transaction.add(transactions[i].acc_no);
+						transaction.add(transactions[i].deposit);
+						transaction.add(transactions[i].withdraw);
+						transaction.add(transactions[i].balance);
+						transaction.add(transactions[i].time);
+						obj.add(transaction);
+					}
+					pw.println(obj);
+				}
+			}
+			break;
+			case ACCOUNT_STATEMENT_RANGE : {
+				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				int start_hour = Integer.parseInt(req.getParameter("start_hour"));
+				int start_min = Integer.parseInt(req.getParameter("start_min"));
+				int stop_hour = Integer.parseInt(req.getParameter("stop_hour"));
+				int stop_min = Integer.parseInt(req.getParameter("stop_min"));
+				boolean is_valid = bank.is_valid_account(acc_no);
+				if(!is_valid) 
+					pw.println("Account number is not valid");
+				else if(start_hour < 0 || start_hour >= 24 || start_min < 0 || start_min >= 60) 
+					pw.println("Invalid time");
+				else if(stop_hour < 0 || stop_hour >= 24 || stop_min < 0 || stop_min >= 60) 
+					pw.println("Invalid time");
+				else {
+					Transaction[] transactions = bank.print_account_statement_range(acc_no,start_hour,start_min,stop_hour,stop_min);
+					JSONArray obj = new JSONArray();
+					for(int i = 0;i < transactions.length;i++) {
+						JSONArray transaction = new JSONArray();
+						transaction.add(transactions[i].acc_no);
+						transaction.add(transactions[i].deposit);
+						transaction.add(transactions[i].withdraw);
+						transaction.add(transactions[i].balance);
+						transaction.add(transactions[i].time);
+						obj.add(transaction);
+					}
+					pw.println(obj);
+				}
 			}
 			break;
 			case STANDING_INSTRUCTIONS : {
