@@ -44,14 +44,17 @@ public class Banking extends HttpServlet{
 	
 	
 	private native boolean is_valid_account(int acc_no);
-	private native boolean is_customer_under_current_operator(int acc_no);
-	private native boolean is_operator_password_correct(String password);
+	private native boolean is_customer_under_current_operator(int operator_id,int acc_no);
+	//private native boolean is_customer_under_current_operator(int acc_no);
+	private native boolean is_operator_password_correct(int operator_id,String password);
+	//private native boolean is_operator_password_correct(String password);
+
 	
 	private native boolean login(int id,String password);
 	private native boolean add_operator(String name,int id,String password,String is_admin);
-	private native int add_customer(String name,int age,String phone,String address,String passphrase,String security_qn,String security_ans);
+	private native int add_customer(String name,int age,String phone,String address,String passphrase,String security_qn,String security_ans,int operator_id);
 	private native void update_customer(int acc_no,String details,String phone,String address);
-	private native void delete_account(int acc_no,String password);
+	private native void delete_account(int acc_no,int operator_id,String password);
 	private native Customer display(int acc_no);
 	private native Customer[] display_all();
 	private native void deposit(int acc_no,int money);
@@ -126,9 +129,11 @@ public class Banking extends HttpServlet{
 			break;
 			case ADD_CUSTOMER: {
 				int age = Integer.parseInt(req.getParameter("age"));
+				int operator_id = Integer.parseInt(req.getParameter("operator_id"));
 				int acc_no;
+				getServletContext().log("Inside add");
 				acc_no = bank.add_customer(req.getParameter("name"),age,req.getParameter("phone"),req.getParameter("address"),
-					req.getParameter("passphrase"),req.getParameter("security_qn"),req.getParameter("security_ans"));
+					req.getParameter("passphrase"),req.getParameter("security_qn"),req.getParameter("security_ans"),operator_id);
 				pw.println("Your account number is " + acc_no);
 			}
 			break;
@@ -142,12 +147,15 @@ public class Banking extends HttpServlet{
 				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
 				String password = req.getParameter("operator_password");
 				boolean is_valid = bank.is_valid_account(acc_no);
+				int operator_id = Integer.parseInt(req.getParameter("operator_id"));
 				if(!is_valid)
 					pw.println("Account number is not valid");
-				else if(!bank.is_operator_password_correct(password))
+				else if(!bank.is_customer_under_current_operator(operator_id,acc_no))
+					pw.println("Customer is under different operator");
+				else if(!bank.is_operator_password_correct(operator_id,password))
 					pw.println("Operator password wrong");
 				else {
-					bank.delete_account(acc_no,password);
+					bank.delete_account(acc_no,operator_id,password);
 					pw.println("Account deleted successfully");
 				}
 			}
@@ -205,9 +213,11 @@ public class Banking extends HttpServlet{
 			break;
 			case WITHDRAW : {
 				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				//getServletContext().log("acc_no is "+acc_no);
 				int money = Integer.parseInt(req.getParameter("money"));
 				String customer_passphrase = req.getParameter("customer_passphrase");
 				String operator_password = req.getParameter("operator_password");
+				int operator_id = Integer.parseInt(req.getParameter("operator_id"));
 				boolean is_valid = bank.is_valid_account(acc_no);
 				if(!is_valid) 
 					pw.println("Account number is not valid");
@@ -215,7 +225,9 @@ public class Banking extends HttpServlet{
 					pw.println("Enter valid amount");
 				else if(!bank.is_passphrase_valid(acc_no,customer_passphrase))
 					pw.println("Invalid passphrase");
-				else if(!bank.is_operator_password_correct(operator_password))	
+				else if(!bank.is_customer_under_current_operator(operator_id,acc_no))
+					pw.println("Customer is under different operator");
+				else if(!bank.is_operator_password_correct(operator_id,operator_password))	
 					pw.println("Operator password wrong");
 				else if(bank.is_max_transactions_reached(acc_no)) 
 					pw.println("Maximum transactions reached");
@@ -252,7 +264,10 @@ public class Banking extends HttpServlet{
 				String operator_password = req.getParameter("operator_password");
 				int hour = Integer.parseInt(req.getParameter("hour"));
 				int min = Integer.parseInt(req.getParameter("min"));
+				int operator_id = Integer.parseInt(req.getParameter("operator_id"));
+				//getServletContext().log("operator id is "+ operator_id+"and password is "+operator_password);
 				boolean is_valid = bank.is_valid_account(withdraw_acc_no);
+				//getServletContext().log("Gonna schedule");
 				if(!is_valid) 
 					pw.println("Account number is not valid");
 				else if(!bank.is_valid_account(acc_no)) 
@@ -265,9 +280,9 @@ public class Banking extends HttpServlet{
 					pw.println("Enter valid time");
 				else if(!bank.is_passphrase_valid(withdraw_acc_no,customer_passphrase))
 					pw.println("Invalid passphrase");
-				else if(!bank.is_customer_under_current_operator(withdraw_acc_no)) 
+				else if(!bank.is_customer_under_current_operator(operator_id,withdraw_acc_no)) 
 					pw.println("The customer is under some other operator");
-				else if(!bank.is_operator_password_correct(operator_password))	
+				else if(!bank.is_operator_password_correct(operator_id,operator_password))	
 					pw.println("Operator password wrong");
 				else {
 					bank.schedule_transfer(withdraw_acc_no,money,acc_no,customer_passphrase,operator_password,hour,min);
@@ -334,6 +349,8 @@ public class Banking extends HttpServlet{
 				int hour = Integer.parseInt(req.getParameter("hour"));
 				int min = Integer.parseInt(req.getParameter("min"));
 				int period = Integer.parseInt(req.getParameter("period"));
+				int operator_id = Integer.parseInt(req.getParameter("operator_id"));
+				getServletContext().log("operator id is "+ operator_id+"and password is "+operator_password);
 				boolean is_valid = bank.is_valid_account(withdraw_acc_no);
 				if(!is_valid) 
 					pw.println("Account number is not valid");
@@ -349,9 +366,9 @@ public class Banking extends HttpServlet{
 					pw.println("Enter valid time");
 				else if(!bank.is_passphrase_valid(withdraw_acc_no,customer_passphrase))
 					pw.println("Invalid passphrase");
-				else if(!bank.is_customer_under_current_operator(withdraw_acc_no)) 
+				else if(!bank.is_customer_under_current_operator(operator_id,withdraw_acc_no)) 
 					pw.println("The customer is under some other operator");
-				else if(!bank.is_operator_password_correct(operator_password))	
+				else if(!bank.is_operator_password_correct(operator_id,operator_password))	
 					pw.println("Operator password wrong");
 				else {
 					bank.add_standing_transactions(withdraw_acc_no,money,acc_no,customer_passphrase,operator_password,hour,min,period);
@@ -378,6 +395,8 @@ public class Banking extends HttpServlet{
 			break;
 			case FORGOT_PASSWORD : {
 				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
+				int operator_id = Integer.parseInt(req.getParameter("operator_id"));
+				getServletContext().log("Operator id is "+operator_id);
 				boolean is_valid = bank.is_valid_account(acc_no);
 				if(!is_valid) 
 					pw.println("Account number is not valid");

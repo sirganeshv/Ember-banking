@@ -1,26 +1,26 @@
 <div>
-	<form action="/schedule_transfer" method="post">
+	<form>
 		<fieldset>
 			<label for="withdraw_acc_no">Account Number:</label>
-			<input type="number" id="withdraw_acc_no" name="withdraw_acc_no" placeholder="Enter your Account number" required />
+			{{input type="number" id="withdraw_acc_no" name="withdraw_acc_no" value=withdraw_acc_no placeholder="Enter your Account number" required='required' }}
 			<br/><br/>
 			<label for="money">Money:</label>
-			<input type="number" id="money" name="money" placeholder="Withdraw amount" required />
+			{{input type="number" id="money" name="money" value=money placeholder="Withdraw amount" required='required'  }}
 			<br/><br/>
 			<label for="acc_no">Reciever Account Number:</label>
-			<input type="number" id="acc_no" name="acc_no" placeholder="Enter receiver's Account number" required />
+			{{input type="number" id="acc_no" name="acc_no" value=acc_no placeholder="Enter receiver's Account number" required='required' }}
 			<br/><br/>
 			<label for="customer_passphrase">Customer Passphrase:</label>
-			<input type="password" id="customer_passphrase" name="customer_passphrase" placeholder="Enter customer_passphrase" required />
+			{{input type="password" id="customer_passphrase" name="customer_passphrase" value=customer_passphrase placeholder="Enter customer_passphrase" required='required' }}
 			<br/><br/>
 			<label for="operator_password">Operator Password:</label>
-			<input type="password" id="operator_password" name="operator_password" placeholder="Enter operator_password" required />
+			{{input type="password" id="operator_password" name="operator_password" value=operator_password placeholder="Enter operator_password" required='required'  }}
 			<br/><br/>
 			<label for="hour">Time:</label>
-			<input type="number" id="hour" name="hour" placeholder="HH" required />
-			<input type="number" id="min" name="min" placeholder="MM" required />
+			{{input type="number" id="hour" name="hour" value=hour placeholder="HH" required='required'  }}
+			{{input type="number" id="min" name="min" value=min placeholder="MM" required='required'  }}
 			<br/><br/>
-			<input type="submit" value="Schedule" />
+			<button type="submit" {{action "schedule_transfer" }}>Schedule</button>
 		</fieldset>
 	</form>
 </div>

@@ -1,6 +1,8 @@
 import Controller from '@ember/controller';
+import Ember from 'ember';
 
 export default Controller.extend({
+  session: Ember.inject.service(),
   ajax: Ember.inject.service(),
   actions: {
     login() {
@@ -13,17 +15,23 @@ export default Controller.extend({
             "password" : this.get('pass')
         }
       }).then(function(resp){
-        /*var data = JSON.parse(resp);
-        that.set('name',data.name);
-        that.set('age',data.age);*/
         var data  = resp;
-			if(data.trim() == 'false')
-			  that.set('message',"Enter your credentials correctly");
+			  if(data.trim() == 'false')
+			    that.set('message',"Enter your credentials correctly");
         else if(data.trim() == 'true'){
-          that.transitionToRoute('/home');
+          /*that.get('session').login(that.get('id'),that.get('pass')).then(() => {
+            that.transitionToRoute('/home');
+          }, (err) => {
+            alert('Error obtaining token: ' + err.responseText);
+          });
         }
       }).catch(function(error){
-        alert(JSON.stringify(error));
+        alert(error);
+        that.transitionToRoute('/home');
+      });*/
+        that.get('session').login(that.get('id'),that.get('pass'));
+        that.transitionToRoute('/home');
+        }
       });
     }
   }

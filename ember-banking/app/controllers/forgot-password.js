@@ -1,6 +1,7 @@
 import Controller from '@ember/controller';
 
 export default Controller.extend({
+  session: Ember.inject.service(),
   ajax: Ember.inject.service(),
   actions: {
     forgot() {
@@ -10,7 +11,8 @@ export default Controller.extend({
         url: "/forgot_password",
         type: "POST",
         data: {
-          "acc_no" : this.get('acc_no')
+          "acc_no" : this.get('acc_no'),
+          "operator_id" : this.get('session').currentUser
         }
       }).then(function(resp){
           var data  = resp;

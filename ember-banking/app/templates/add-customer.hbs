@@ -1,30 +1,30 @@
 <div>
-	<form action="/add_customer" method="post">
+	<form>
 		<fieldset>
 		<label for="name">Name:</label>
-		<input type="text" id="name" name="name" placeholder="Enter your full name" required />
+		{{input type="text" id="name" name="name" value=name placeholder="Enter your full name" required='required' }}
 		<br/><br/>
 		<label for="age">Age:</label>
-		<input type="number" id="age" name="age" placeholder="Enter your age" min = 1 required />
+		{{input type="number" id="age" name="age" value=age placeholder="Enter your age" min = 1 required='required' }}
 		<br/><br/>
 		<label for="phone">Phone_no:</label>
-		<input type="number" id="phone" name="phone" placeholder="Enter your phone_no" min = 1000 max = 9999 required />
+		{{input type="number" id="phone" name="phone" value=phone placeholder="Enter your phone_no" min = 1000 max = 9999 required='required' }}
 		<br/><br/>
 		<label for="address">Address:</label>
-		<textarea id="address" name="address" placeholder="What's your address?" required></textarea>
+		{{textarea id="address" name="address" value=address placeholder="What's your address?" required='required'}}
 		<br/><br/>
 		<label for="passphrase">Passphrase:</label>
-		<input type ="password" id="passphrase" name = "passphrase" placeholder="What's your passphrase?" required />
+		{{input type ="password" id="passphrase" value=passphrase name = "passphrase" placeholder="What's your passphrase?" required='required' }}
 		<br/><br/>
 		<label for="security_qn">Security Question:</label>
-		<input type ="text" id="security_qn" name="security_qn" placeholder="What's your question?" required />
+		{{input type ="text" id="security_qn" name="security_qn" value=security_qn placeholder="What's your question?" required='required' }}
 		<br/><br/>
 		<label for="security_ans">Security Answer:</label>
-		<input type ="text" id="security_ans" name="security_ans" placeholder="What's your answer?"required />
+		{{input type ="text" id="security_ans" name="security_ans" value=security_ans placeholder="What's your answer?"required='required' }}
 		<br/><br/>
 
 		<br/><br/>
-		<input type="submit" value="Add" />
+		<button type="submit" {{action "add_customer" }}>Add</button>
 		</fieldset>
 	</form>
 </div>

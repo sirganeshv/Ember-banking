@@ -414,7 +414,7 @@ JNIEXPORT jboolean JNICALL Java_Banking_login(JNIEnv * env, jobject obj, jint id
 
 //Adds account for new customer and assigns account number
 JNIEXPORT jint JNICALL Java_Banking_add_1customer(JNIEnv *env, jobject obj, jstring name, jint age, jstring phone, jstring address,
-	jstring passphrase, jstring security_qn, jstring security_ans){
+	jstring passphrase, jstring security_qn, jstring security_ans, jint operator_id){
 	struct customer_details customer ;
 	strcpy(customer.customer_name,env->GetStringUTFChars(name, 0));
 	customer.age = age;
@@ -433,8 +433,9 @@ JNIEXPORT jint JNICALL Java_Banking_add_1customer(JNIEnv *env, jobject obj, jstr
 	struct transaction initial_transaction;
 	initial_transaction.acc_no = customer.acc_no;
 	transactions.push_back(initial_transaction);
-	current_operator->customer_acc_no_list[current_operator->no_of_customers] = customer.acc_no;
-	current_operator->no_of_customers++;
+	int k = find_operator_position(operator_id);
+	operators[k].customer_acc_no_list[operators[k].no_of_customers] = customer.acc_no;
+	operators[k].no_of_customers++;
 	struct customer_info customer_information;
 	customer_information.acc_no = customer.acc_no;
 	customer_infos.push_back(customer_information);
@@ -485,9 +486,9 @@ JNIEXPORT void JNICALL Java_Banking_update_1customer(JNIEnv *env, jobject obj, j
 
 
 //Delete account of a user based on account number
-JNIEXPORT void JNICALL Java_Banking_delete_1account(JNIEnv *, jobject, jint acc_no, jstring password){
+JNIEXPORT void JNICALL Java_Banking_delete_1account(JNIEnv *, jobject, jint acc_no, jint operator_id,jstring password){
 	//int curr_customer;
-	int operator_id = find_operator(acc_no);
+	//int operator_id = find_operator(acc_no);
 	int k;
 	for(k = 0;k < customer_list.size();k++) {
 		if(customer_list[k].acc_no == acc_no) {
@@ -503,7 +504,8 @@ JNIEXPORT void JNICALL Java_Banking_delete_1account(JNIEnv *, jobject, jint acc_
 	int i = find_customer_position(acc_no);
 	if(i == -1) 
 		return;
-	if(!is_customer_under_current_operator(i) && !current_operator->is_admin ) {
+	k = find_operator_position(operator_id);
+	if(!is_customer_under_current_operator(i) && !operators[k].is_admin ) {
 		return;
 	}
 	customer_details customer = customer_list[i];
@@ -1372,8 +1374,35 @@ JNIEXPORT jboolean JNICALL Java_Banking_is_1valid_1account(JNIEnv *, jobject, ji
 		return true;
 }
 
+JNIEXPORT jboolean JNICALL Java_Banking_is_1customer_1under_1current_1operator (JNIEnv *env, jobject obj, jint operator_id, jint acc_no) {
+	int j;
+	for(j = 0;j < customer_list.size();j++) {
+		if(customer_list[j].acc_no == acc_no) {
+			customer_list.push_back(customer_list[j]);
+			customer_list.erase(customer_list.begin()+j);
+			customer_frequency.push_back(customer_frequency[j]);
+			customer_frequency.erase(customer_frequency.begin() + j);
+			break;
+		}
+	}
+	if(j == customer_list.size())
+		read_customer(acc_no);
+	int i = find_customer_position(acc_no);
+	bool status = false;
+	int k = find_operator_position(operator_id);
+	for(int j = 0;j < operators[k].no_of_customers;j++) {
+		if(operators[k].customer_acc_no_list[j] == customer_list[i].acc_no) {
+			status = true;
+			break;
+		}
+	}
+	if(!operators[k].is_admin && !status) {
+		return false;
+	}
+	return true;
+}
 
-JNIEXPORT jboolean JNICALL Java_Banking_is_1customer_1under_1current_1operator(JNIEnv *, jobject, jint acc_no) {
+/*JNIEXPORT jboolean JNICALL Java_Banking_is_1customer_1under_1current_1operator(JNIEnv *, jobject, jint acc_no) {
 	int j;
 	for(j = 0;j < customer_list.size();j++) {
 		if(customer_list[j].acc_no == acc_no) {
@@ -1398,7 +1427,7 @@ JNIEXPORT jboolean JNICALL Java_Banking_is_1customer_1under_1current_1operator(J
 		return false;
 	}
 	return true;
-}
+}*/
 
 JNIEXPORT jboolean JNICALL Java_Banking_is_1passphrase_1valid(JNIEnv *env, jobject obj, jint acc_no, jstring customer_passphrase) {
 	int j;
@@ -1420,16 +1449,29 @@ JNIEXPORT jboolean JNICALL Java_Banking_is_1passphrase_1valid(JNIEnv *env, jobje
 		return false;
 	}
 	customer_list[i].wrong_attempts = 0;
+	update_customer(customer_list[i]);
 	return true;
 	
 }
 
-JNIEXPORT jboolean JNICALL Java_Banking_is_1operator_1password_1correct(JNIEnv *env, jobject obj, jstring password) {
-	if(strcmp(env->GetStringUTFChars(password,0),current_operator->password)) {
+JNIEXPORT jboolean JNICALL Java_Banking_is_1operator_1password_1correct(JNIEnv *env, jobject obj, jint operator_id, jstring operator_password) {
+	int k = find_operator_position(operator_id);
+	if(strcmp(env->GetStringUTFChars(operator_password,0),operators[k].password)) {
+		cout<<"Invalid password";
 		return false;
 	}
+	cout<<"valid password";
 	return true;
 }
+
+/*JNIEXPORT jboolean JNICALL Java_Banking_is_1operator_1password_1correct(JNIEnv *env, jobject obj, jstring password) {
+	if(strcmp(env->GetStringUTFChars(password,0),current_operator->password)) {
+		cout<<"Invalid password";
+		return false;
+	}
+	cout<<"valid password";
+	return true;
+}*/
 
 JNIEXPORT jboolean JNICALL Java_Banking_is_1max_1transactions_1reached(JNIEnv *env, jobject obj, jint acc_no) {
 	int j = find_customer_info_position(acc_no);

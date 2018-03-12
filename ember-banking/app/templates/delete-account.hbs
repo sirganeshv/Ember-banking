@@ -1,13 +1,13 @@
 <div>
-	<form action="/delete_account" method="post">
+	<form>
 		<fieldset>
 			<label for="acc_no">Account Number:</label>
-			<input type="number" id="acc_no" name="acc_no" placeholder="Enter Account number" required />
+			{{input type="number" id="acc_no" name="acc_no" value=acc_no placeholder="Enter Account number" required='required' }}
 			<br/><br/>
 			<label for="operator_password">Operator Password:</label>
-			<input type="password" id="operator_password" name="operator_password" placeholder="Enter operator_password" required />
+			{{input type="password" id="operator_password" value=operator_password name="operator_password" placeholder="Enter operator_password" required='required'}}
 			<br/><br/>
-			<input type="submit" value="Delete" />
+			<button type="submit" {{action "delete" }}>Delete</button>
 		</fieldset>
 	</form>
 </div>

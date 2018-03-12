@@ -14,9 +14,9 @@
 	</style>
 <!--/head-->
 <!--body-->
-<div class = "logout">
-	<a href = "/logout">logout</a>
-</div>
+{{userID}}
+{{get session currentUser}}
+<button type="submit" class='logout' {{action "logout" }}>Logout</button>
 <br/><br/>
 <div class="Container">
 	<div class="row">
