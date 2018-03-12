@@ -72,6 +72,7 @@ public class Banking extends HttpServlet{
 	private native boolean is_passphrase_valid(int acc_no,String customer_passphrase);
 	private native boolean is_max_transactions_reached(int acc_no);
 	private native boolean is_phone_no_valid(String phone_no);
+	private native void close();
 	
 	
 	
@@ -105,7 +106,8 @@ public class Banking extends HttpServlet{
 	}
 	public void doProcess(HttpServletRequest req,HttpServletResponse res)  
 	throws ServletException,IOException {	
-		Banking bank = new Banking();
+		Banking bank = new Banking();	
+		try{
 		bank.initialize();
 		String path = req.getServletPath();
 		res.setContentType("text/html");
@@ -422,6 +424,13 @@ public class Banking extends HttpServlet{
 			break;
 		}
 		pw.close();
+	}
+	catch(Exception e) {
+		e.printStackTrace();
+	}
+	finally {
+		bank.close();
+	}
 	}
 		
 		
