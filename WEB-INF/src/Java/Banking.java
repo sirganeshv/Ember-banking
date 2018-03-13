@@ -56,7 +56,7 @@ public class Banking extends HttpServlet{
 	private native void update_customer(int acc_no,String details,String phone,String address);
 	private native void delete_account(int acc_no,int operator_id,String password);
 	private native Customer display(int acc_no);
-	private native Customer[] display_all();
+	private native Customer[] display_all(int operator_id);
 	private native void deposit(int acc_no,int money);
 	private native boolean withdraw(int acc_no,int money,String customer_passphrase,String operator_password);
 	private native void transfer_money(int acc_no,int money,String phone);
@@ -141,8 +141,13 @@ public class Banking extends HttpServlet{
 			break;
 			case UPDATE_CUSTOMER: {
 				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
-				bank.update_customer(acc_no,req.getParameter("details"),req.getParameter("phone"),req.getParameter("address"));
-				pw.println("Updated");
+				boolean is_valid = bank.is_valid_account(acc_no);
+				if(!is_valid)
+					pw.println("Account number is not valid");
+				else {
+					bank.update_customer(acc_no,req.getParameter("details"),req.getParameter("phone"),req.getParameter("address"));
+					pw.println("Updated");
+				}
 			}
 			break;
 			case DELETE_ACCOUNT : {
@@ -163,10 +168,13 @@ public class Banking extends HttpServlet{
 			}
 			break;
 			case DISPLAY : {
+				int operator_id = Integer.parseInt(req.getParameter("operator_id"));
 				int acc_no = Integer.parseInt(req.getParameter("acc_no"));
 				boolean is_valid = bank.is_valid_account(acc_no);
 				if(!is_valid) 
 					pw.println("Account number is not valid");
+				else if(!bank.is_customer_under_current_operator(operator_id,acc_no))
+					pw.println("Customer is under different operator");
 				else { 
 					Customer customer = bank.display(acc_no);
 					//JSONArray obj = new JSONArray();
@@ -182,8 +190,9 @@ public class Banking extends HttpServlet{
 			}
 			break;
 			case DISPLAY_ALL : {
+				int operator_id = Integer.parseInt(req.getParameter("operator_id"));
 				getServletContext().log("display all inside");
-				Customer[] customers = bank.display_all();
+				Customer[] customers = bank.display_all(operator_id);
 				JSONArray obj = new JSONArray();
 				getServletContext().log("display all "+customers.length+" customers");
 				for(int i = 0;i < customers.length;i++) {
@@ -427,9 +436,10 @@ public class Banking extends HttpServlet{
 	}
 	catch(Exception e) {
 		e.printStackTrace();
+		bank.close();
 	}
 	finally {
-		bank.close();
+		
 	}
 	}
 		

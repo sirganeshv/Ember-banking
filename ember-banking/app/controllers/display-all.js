@@ -1,6 +1,7 @@
 import Controller from '@ember/controller';
 
 export default Controller.extend({
+  session: Ember.inject.service(),
   ajax: Ember.inject.service(),
   actions: {
     display() {
@@ -9,6 +10,7 @@ export default Controller.extend({
         url: "/display_all",
         type: "POST",
         data: {
+          "operator_id" : this.get('session').currentUser
         }
       }).then(function(resp){
           var table = document.getElementById("emptable");

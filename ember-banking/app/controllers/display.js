@@ -14,15 +14,20 @@ export default Controller.extend({
           url: "/display",
           type: "POST",
           data: {
-            "acc_no" : $('#acc_no').val()
+            "acc_no" : $('#acc_no').val(),
+            "operator_id" : this.get('session').currentUser
           }
         }).then(function(resp){
             var table = document.getElementById("emptable");
             $('#employee').css("display","none");
             if(resp.trim() == 'Account number is not valid')
               alert("Invalid account number");
+            else if(resp.trim() == 'Customer is under different operator')
+              alert("The Customer is under different operator");
             else {
-              table.deleteRow(0);
+              var count = $('#emptable tr').length;
+              if(count > 0)
+                table.deleteRow(0);
               var data = JSON.parse(resp);
               $('#employee').css("display","initial");
   						var table = document.getElementById("emptable");
